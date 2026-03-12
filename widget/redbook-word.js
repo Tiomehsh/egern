@@ -3,7 +3,7 @@
 // 点击单词打开欧陆词典查词
 
 const WORD_LIST_URL =
-    "https://raw.githubusercontent.com/busiyiworld/maimemo-export/refs/heads/main/exported/list/2026考研英语词汇红宝书.txt";
+    "https://raw.githubusercontent.com/busiyiworld/maimemo-export/refs/heads/main/exported/list/2026%E8%80%83%E7%A0%94%E8%8B%B1%E8%AF%AD%E8%AF%8D%E6%B1%87%E7%BA%A2%E5%AE%9D%E4%B9%A6.txt";
 const STORAGE_KEY_WORDS = "redbook_words";
 const STORAGE_KEY_INDEX = "redbook_index";
 const REFRESH_MINUTES = 30;
@@ -12,10 +12,23 @@ export default async function (ctx) {
     // ── 1. 获取单词列表（优先读缓存） ──
     let words = ctx.storage.getJSON(STORAGE_KEY_WORDS);
 
+    // 校验缓存有效性（排除之前误缓存的 HTML 内容）
+    if (words && words.length > 0 && words[0].startsWith("<")) {
+        ctx.storage.delete(STORAGE_KEY_WORDS);
+        words = null;
+    }
+
     if (!words || words.length === 0) {
         try {
-            const resp = await ctx.http.get(WORD_LIST_URL);
+            const resp = await ctx.http.get(WORD_LIST_URL, {
+                credentials: "omit",
+            });
             const text = await resp.text();
+            // 安全检查：如果返回 HTML 则清除缓存重试
+            if (text.trimStart().startsWith("<")) {
+                ctx.storage.delete(STORAGE_KEY_WORDS);
+                return errorWidget("获取词表异常，请重试");
+            }
             words = text
                 .split("\n")
                 .map((line) => line.trim())
@@ -40,7 +53,7 @@ export default async function (ctx) {
     ctx.storage.setJSON(STORAGE_KEY_INDEX, nextIndex);
 
     // ── 3. 欧陆词典 URL ──
-    const eudicUrl = "eudic://dict/" + encodeURIComponent(currentWord);
+    const eudicUrl = "eudic://dict/" + currentWord;
 
     // ── 4. 根据小组件尺寸构建 DSL ──
     const family = ctx.widgetFamily;
