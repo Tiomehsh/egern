@@ -1,6 +1,5 @@
 // 红宝书随机单词 Egern 小组件
 // 数据源: 2026考研英语词汇红宝书
-// 点击单词打开欧陆词典查词
 
 const WORD_LIST_URL =
     "https://cdn.jsdelivr.net/gh/busiyiworld/maimemo-export@main/exported/list/2026%E8%80%83%E7%A0%94%E8%8B%B1%E8%AF%AD%E8%AF%8D%E6%B1%87%E7%BA%A2%E5%AE%9D%E4%B9%A6.txt";
@@ -51,10 +50,6 @@ export default async function (ctx) {
     const nextIndex = (index + 1) % words.length;
     ctx.storage.setJSON(STORAGE_KEY_INDEX, nextIndex);
 
-    // ── 3. 欧陆词典 URL ──
-    // 注意：url 必须放在子元素上（text/stack），而非根 widget 上
-    // 放在根 widget 上会被 WidgetKit 当作 widgetURL，只会打开宿主 App（Egern）
-    const eudicUrl = "https://dict.eudic.net/dicts/en/" + currentWord;
 
     // ── 4. 根据小组件尺寸构建 DSL ──
     const family = ctx.widgetFamily;
@@ -73,7 +68,6 @@ export default async function (ctx) {
                 {
                     type: "text",
                     text: currentWord,
-                    url: eudicUrl,
                     font: { size: "headline", weight: "bold" },
                     maxLines: 1,
                     minScale: 0.6,
@@ -91,7 +85,6 @@ export default async function (ctx) {
                 {
                     type: "text",
                     text: "📖 " + currentWord,
-                    url: eudicUrl,
                     font: { size: "headline" },
                 },
             ],
@@ -107,7 +100,6 @@ export default async function (ctx) {
                 {
                     type: "text",
                     text: currentWord,
-                    url: eudicUrl,
                     font: { size: "caption2", weight: "bold" },
                     textAlign: "center",
                     maxLines: 2,
@@ -156,38 +148,22 @@ export default async function (ctx) {
                     ],
                 },
                 { type: "spacer" },
-                // 单词 — 点击打开欧陆词典
+                // 单词
                 {
                     type: "text",
                     text: currentWord,
-                    url: eudicUrl,
                     font: { size: "title", weight: "bold" },
                     textColor: "#FFFFFF",
                     maxLines: 1,
                     minScale: 0.5,
                 },
                 { type: "spacer" },
-                // 底部提示
+                // 底部进度
                 {
-                    type: "stack",
-                    direction: "row",
-                    alignItems: "center",
-                    gap: 4,
-                    children: [
-                        {
-                            type: "image",
-                            src: "sf-symbol:hand.tap.fill",
-                            color: "#FFFFFF66",
-                            width: 10,
-                            height: 10,
-                        },
-                        {
-                            type: "text",
-                            text: "点击查词 · " + (index + 1) + "/" + words.length,
-                            font: { size: "caption2" },
-                            textColor: "#FFFFFF66",
-                        },
-                    ],
+                    type: "text",
+                    text: (index + 1) + " / " + words.length,
+                    font: { size: "caption2" },
+                    textColor: "#FFFFFF55",
                 },
             ],
         };
@@ -237,11 +213,10 @@ export default async function (ctx) {
                 ],
             },
             { type: "spacer" },
-            // 单词 — 点击打开欧陆词典
+            // 单词
             {
                 type: "text",
                 text: currentWord,
-                url: eudicUrl,
                 font: { size: "largeTitle", weight: "bold" },
                 textColor: "#FFFFFF",
                 textAlign: "center",
@@ -249,28 +224,13 @@ export default async function (ctx) {
                 minScale: 0.5,
             },
             { type: "spacer" },
-            // 底部提示
+            // 底部进度
             {
-                type: "stack",
-                direction: "row",
-                alignItems: "center",
-                children: [
-                    { type: "spacer" },
-                    {
-                        type: "image",
-                        src: "sf-symbol:hand.tap.fill",
-                        color: "#FFFFFF55",
-                        width: 12,
-                        height: 12,
-                    },
-                    {
-                        type: "text",
-                        text: " 点击单词打开欧陆词典",
-                        font: { size: "caption2" },
-                        textColor: "#FFFFFF55",
-                    },
-                    { type: "spacer" },
-                ],
+                type: "text",
+                text: (index + 1) + " / " + words.length,
+                font: { size: "caption2" },
+                textColor: "#FFFFFF55",
+                textAlign: "center",
             },
         ],
     };
