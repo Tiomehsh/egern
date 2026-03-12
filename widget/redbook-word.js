@@ -1,17 +1,20 @@
 // 红宝书随机单词 Egern 小组件
 // 数据源: 2026考研英语词汇红宝书
+// 使用 MyMemory API 获取中文释义
 
 const WORD_LIST_URL =
     "https://cdn.jsdelivr.net/gh/busiyiworld/maimemo-export@main/exported/list/2026%E8%80%83%E7%A0%94%E8%8B%B1%E8%AF%AD%E8%AF%8D%E6%B1%87%E7%BA%A2%E5%AE%9D%E4%B9%A6.txt";
+const TRANSLATE_API = "https://api.mymemory.translated.net/get";
 const STORAGE_KEY_WORDS = "redbook_words";
 const STORAGE_KEY_INDEX = "redbook_index";
+const STORAGE_KEY_TRANS = "redbook_trans"; // 翻译缓存
 const REFRESH_MINUTES = 30;
 
 export default async function (ctx) {
     // ── 1. 获取单词列表（优先读缓存） ──
     let words = ctx.storage.getJSON(STORAGE_KEY_WORDS);
 
-    // 校验缓存有效性（排除之前误缓存的非单词内容）
+    // 校验缓存有效性
     if (words && (words.length < 100 || !/^[a-zA-Z]/.test(words[0]))) {
         ctx.storage.delete(STORAGE_KEY_WORDS);
         words = null;
@@ -27,9 +30,8 @@ export default async function (ctx) {
                 .split("\n")
                 .map((line) => line.trim())
                 .filter((line) => line.length > 0 && !line.startsWith("#") && /^[a-zA-Z]/.test(line));
-            // 安全检查：单词数过少说明拉取的不是正常词表
             if (words.length < 100) {
-                return errorWidget("获取词表异常(" + words.length + ")，请重试");
+                return errorWidget("获取词表异常(" + words.length + ")");
             }
             ctx.storage.setJSON(STORAGE_KEY_WORDS, words);
         } catch (e) {
@@ -50,6 +52,33 @@ export default async function (ctx) {
     const nextIndex = (index + 1) % words.length;
     ctx.storage.setJSON(STORAGE_KEY_INDEX, nextIndex);
 
+    // ── 3. 获取中文释义（优先读缓存） ──
+    let transCache = ctx.storage.getJSON(STORAGE_KEY_TRANS) || {};
+    let meaning = transCache[currentWord];
+
+    if (!meaning) {
+        try {
+            const url = TRANSLATE_API + "?q=" + encodeURIComponent(currentWord) + "&langpair=en|zh-CN";
+            const resp = await ctx.http.get(url, { credentials: "omit" });
+            const data = await resp.json();
+            if (data && data.responseData && data.responseData.translatedText) {
+                meaning = data.responseData.translatedText;
+                // 缓存翻译（限制缓存大小，最多存 500 个）
+                if (Object.keys(transCache).length > 500) {
+                    const keys = Object.keys(transCache);
+                    for (let i = 0; i < 100; i++) {
+                        delete transCache[keys[i]];
+                    }
+                }
+                transCache[currentWord] = meaning;
+                ctx.storage.setJSON(STORAGE_KEY_TRANS, transCache);
+            }
+        } catch (e) {
+            // 翻译失败不影响展示
+        }
+    }
+
+    if (!meaning) meaning = "";
 
     // ── 4. 根据小组件尺寸构建 DSL ──
     const family = ctx.widgetFamily;
@@ -62,15 +91,17 @@ export default async function (ctx) {
             children: [
                 {
                     type: "text",
-                    text: "📖 红宝书",
-                    font: { size: "caption2" },
-                },
-                {
-                    type: "text",
                     text: currentWord,
                     font: { size: "headline", weight: "bold" },
                     maxLines: 1,
                     minScale: 0.6,
+                },
+                {
+                    type: "text",
+                    text: meaning,
+                    font: { size: "caption2" },
+                    maxLines: 1,
+                    minScale: 0.5,
                 },
             ],
         };
@@ -84,7 +115,7 @@ export default async function (ctx) {
             children: [
                 {
                     type: "text",
-                    text: "📖 " + currentWord,
+                    text: currentWord + (meaning ? " · " + meaning : ""),
                     font: { size: "headline" },
                 },
             ],
@@ -110,7 +141,6 @@ export default async function (ctx) {
     }
 
     // ── systemSmall — 小尺寸 ──
-    // systemSmall 仅支持单一点击区域，将整个内容包在一个带 url 的 stack 中
     if (family === "systemSmall") {
         return {
             type: "widget",
@@ -123,7 +153,7 @@ export default async function (ctx) {
                 endPoint: { x: 1, y: 1 },
             },
             padding: 16,
-            gap: 6,
+            gap: 4,
             children: [
                 // 标题行
                 {
@@ -145,6 +175,13 @@ export default async function (ctx) {
                             font: { size: "caption1", weight: "semibold" },
                             textColor: "#E8D44D",
                         },
+                        { type: "spacer" },
+                        {
+                            type: "text",
+                            text: (index + 1) + "/" + words.length,
+                            font: { size: "caption2" },
+                            textColor: "#FFFFFF44",
+                        },
                     ],
                 },
                 { type: "spacer" },
@@ -157,19 +194,21 @@ export default async function (ctx) {
                     maxLines: 1,
                     minScale: 0.5,
                 },
-                { type: "spacer" },
-                // 底部进度
+                // 释义
                 {
                     type: "text",
-                    text: (index + 1) + " / " + words.length,
-                    font: { size: "caption2" },
-                    textColor: "#FFFFFF55",
+                    text: meaning,
+                    font: { size: "callout" },
+                    textColor: "#FFFFFFBB",
+                    maxLines: 2,
+                    minScale: 0.6,
                 },
+                { type: "spacer" },
             ],
         };
     }
 
-    // ── systemMedium / systemLarge / systemExtraLarge — 中/大尺寸 ──
+    // ── systemMedium / systemLarge / systemExtraLarge ──
     return {
         type: "widget",
         refreshAfter: REFRESH_MINUTES + "min",
@@ -181,7 +220,7 @@ export default async function (ctx) {
             endPoint: { x: 1, y: 1 },
         },
         padding: 16,
-        gap: 8,
+        gap: 6,
         children: [
             // 标题行
             {
@@ -223,15 +262,17 @@ export default async function (ctx) {
                 maxLines: 1,
                 minScale: 0.5,
             },
-            { type: "spacer" },
-            // 底部进度
+            // 释义
             {
                 type: "text",
-                text: (index + 1) + " / " + words.length,
-                font: { size: "caption2" },
-                textColor: "#FFFFFF55",
+                text: meaning,
+                font: { size: "body" },
+                textColor: "#FFFFFFCC",
                 textAlign: "center",
+                maxLines: 2,
+                minScale: 0.6,
             },
+            { type: "spacer" },
         ],
     };
 }
