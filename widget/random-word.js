@@ -80,11 +80,6 @@ export default async function (ctx) {
     }
 
     if (!meaning) meaning = "";
-    // 截取释义：只保留前两个义项（以分号分隔）
-    if (meaning.length > 0) {
-        const parts = meaning.split("\uff1b");
-        meaning = parts.length > 2 ? parts.slice(0, 2).join("\uff1b") : meaning;
-    }
 
     // ── 4. 根据小组件尺寸构建 DSL ──
     const family = ctx.widgetFamily;
@@ -198,10 +193,10 @@ export default async function (ctx) {
                 {
                     type: "text",
                     text: meaning,
-                    font: { size: "callout" },
+                    font: { size: "footnote" },
                     textColor: "#FFFFFFBB",
-                    maxLines: 2,
-                    minScale: 0.6,
+                    maxLines: 3,
+                    minScale: 0.5,
                 },
                 { type: "spacer" },
             ],
@@ -220,52 +215,69 @@ export default async function (ctx) {
             endPoint: { x: 1, y: 1 },
         },
         padding: 16,
-        gap: 6,
+        gap: 8,
         children: [
             // 标题行
             {
                 type: "stack",
                 direction: "row",
                 alignItems: "center",
-                gap: 8,
+                gap: 6,
                 children: [
                     {
                         type: "image",
                         src: "sf-symbol:book.fill",
                         color: "#E8D44D",
-                        width: 18,
-                        height: 18,
+                        width: 16,
+                        height: 16,
                     },
                     {
                         type: "text",
                         text: "考研英语 · 红宝书",
-                        font: { size: "subheadline", weight: "semibold" },
+                        font: { size: "caption1", weight: "semibold" },
                         textColor: "#E8D44D",
                     },
                 ],
             },
-            { type: "spacer" },
-            // 单词
+            // 主体：单词左 + 释义右
             {
-                type: "text",
-                text: currentWord,
-                font: { size: "largeTitle", weight: "bold" },
-                textColor: "#FFFFFF",
-                textAlign: "center",
-                maxLines: 1,
-                minScale: 0.5,
+                type: "stack",
+                direction: "row",
+                alignItems: "center",
+                gap: 16,
+                flex: 1,
+                children: [
+                    // 左侧：单词
+                    {
+                        type: "text",
+                        text: currentWord,
+                        font: { size: "title", weight: "bold" },
+                        textColor: "#FFFFFF",
+                        maxLines: 1,
+                        minScale: 0.5,
+                    },
+                    // 分割线效果
+                    {
+                        type: "stack",
+                        direction: "column",
+                        width: 2,
+                        height: 40,
+                        backgroundColor: "#E8D44D44",
+                        borderRadius: 1,
+                        children: [],
+                    },
+                    // 右侧：释义
+                    {
+                        type: "text",
+                        text: meaning,
+                        font: { size: "subheadline" },
+                        textColor: "#FFFFFFCC",
+                        flex: 1,
+                        maxLines: 3,
+                        minScale: 0.5,
+                    },
+                ],
             },
-            // 释义
-            {
-                type: "text",
-                text: meaning,
-                font: { size: "body" },
-                textColor: "#FFFFFFCC",
-                textAlign: "center",
-                maxLines: 2,
-                minScale: 0.6,
-            },
-            { type: "spacer" },
         ],
     };
 }
