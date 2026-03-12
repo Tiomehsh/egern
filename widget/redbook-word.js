@@ -51,7 +51,9 @@ export default async function (ctx) {
     const nextIndex = (index + 1) % words.length;
     ctx.storage.setJSON(STORAGE_KEY_INDEX, nextIndex);
 
-    // ── 3. 欧陆词典 URL（使用 https 链接确保兼容性） ──
+    // ── 3. 欧陆词典 URL ──
+    // 注意：url 必须放在子元素上（text/stack），而非根 widget 上
+    // 放在根 widget 上会被 WidgetKit 当作 widgetURL，只会打开宿主 App（Egern）
     const eudicUrl = "https://dict.eudic.net/dicts/en/" + currentWord;
 
     // ── 4. 根据小组件尺寸构建 DSL ──
@@ -61,7 +63,6 @@ export default async function (ctx) {
     if (family === "accessoryRectangular") {
         return {
             type: "widget",
-            url: eudicUrl,
             refreshAfter: REFRESH_MINUTES + "min",
             children: [
                 {
@@ -72,6 +73,7 @@ export default async function (ctx) {
                 {
                     type: "text",
                     text: currentWord,
+                    url: eudicUrl,
                     font: { size: "headline", weight: "bold" },
                     maxLines: 1,
                     minScale: 0.6,
@@ -84,12 +86,12 @@ export default async function (ctx) {
     if (family === "accessoryInline") {
         return {
             type: "widget",
-            url: eudicUrl,
             refreshAfter: REFRESH_MINUTES + "min",
             children: [
                 {
                     type: "text",
                     text: "📖 " + currentWord,
+                    url: eudicUrl,
                     font: { size: "headline" },
                 },
             ],
@@ -100,12 +102,12 @@ export default async function (ctx) {
     if (family === "accessoryCircular") {
         return {
             type: "widget",
-            url: eudicUrl,
             refreshAfter: REFRESH_MINUTES + "min",
             children: [
                 {
                     type: "text",
                     text: currentWord,
+                    url: eudicUrl,
                     font: { size: "caption2", weight: "bold" },
                     textAlign: "center",
                     maxLines: 2,
@@ -116,10 +118,10 @@ export default async function (ctx) {
     }
 
     // ── systemSmall — 小尺寸 ──
+    // systemSmall 仅支持单一点击区域，将整个内容包在一个带 url 的 stack 中
     if (family === "systemSmall") {
         return {
             type: "widget",
-            url: eudicUrl,
             refreshAfter: REFRESH_MINUTES + "min",
             backgroundGradient: {
                 type: "linear",
@@ -154,10 +156,11 @@ export default async function (ctx) {
                     ],
                 },
                 { type: "spacer" },
-                // 单词
+                // 单词 — 点击打开欧陆词典
                 {
                     type: "text",
                     text: currentWord,
+                    url: eudicUrl,
                     font: { size: "title", weight: "bold" },
                     textColor: "#FFFFFF",
                     maxLines: 1,
@@ -193,7 +196,6 @@ export default async function (ctx) {
     // ── systemMedium / systemLarge / systemExtraLarge — 中/大尺寸 ──
     return {
         type: "widget",
-        url: eudicUrl,
         refreshAfter: REFRESH_MINUTES + "min",
         backgroundGradient: {
             type: "linear",
@@ -235,10 +237,11 @@ export default async function (ctx) {
                 ],
             },
             { type: "spacer" },
-            // 单词
+            // 单词 — 点击打开欧陆词典
             {
                 type: "text",
                 text: currentWord,
+                url: eudicUrl,
                 font: { size: "largeTitle", weight: "bold" },
                 textColor: "#FFFFFF",
                 textAlign: "center",
@@ -262,7 +265,7 @@ export default async function (ctx) {
                     },
                     {
                         type: "text",
-                        text: " 点击打开欧陆词典查词",
+                        text: " 点击单词打开欧陆词典",
                         font: { size: "caption2" },
                         textColor: "#FFFFFF55",
                     },
