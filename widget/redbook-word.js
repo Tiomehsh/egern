@@ -3,7 +3,7 @@
 // 点击单词打开欧陆词典查词
 
 const WORD_LIST_URL =
-    "https://raw.githubusercontent.com/busiyiworld/maimemo-export/refs/heads/main/exported/list/2026%E8%80%83%E7%A0%94%E8%8B%B1%E8%AF%AD%E8%AF%8D%E6%B1%87%E7%BA%A2%E5%AE%9D%E4%B9%A6.txt";
+    "https://cdn.jsdelivr.net/gh/busiyiworld/maimemo-export@main/exported/list/2026%E8%80%83%E7%A0%94%E8%8B%B1%E8%AF%AD%E8%AF%8D%E6%B1%87%E7%BA%A2%E5%AE%9D%E4%B9%A6.txt";
 const STORAGE_KEY_WORDS = "redbook_words";
 const STORAGE_KEY_INDEX = "redbook_index";
 const REFRESH_MINUTES = 30;
@@ -12,8 +12,8 @@ export default async function (ctx) {
     // ── 1. 获取单词列表（优先读缓存） ──
     let words = ctx.storage.getJSON(STORAGE_KEY_WORDS);
 
-    // 校验缓存有效性（排除之前误缓存的 HTML 内容）
-    if (words && words.length > 0 && words[0].startsWith("<")) {
+    // 校验缓存有效性（排除之前误缓存的非单词内容）
+    if (words && (words.length < 100 || !/^[a-zA-Z]/.test(words[0]))) {
         ctx.storage.delete(STORAGE_KEY_WORDS);
         words = null;
     }
@@ -24,15 +24,14 @@ export default async function (ctx) {
                 credentials: "omit",
             });
             const text = await resp.text();
-            // 安全检查：如果返回 HTML 则清除缓存重试
-            if (text.trimStart().startsWith("<")) {
-                ctx.storage.delete(STORAGE_KEY_WORDS);
-                return errorWidget("获取词表异常，请重试");
-            }
             words = text
                 .split("\n")
                 .map((line) => line.trim())
-                .filter((line) => line.length > 0 && !line.startsWith("#"));
+                .filter((line) => line.length > 0 && !line.startsWith("#") && /^[a-zA-Z]/.test(line));
+            // 安全检查：单词数过少说明拉取的不是正常词表
+            if (words.length < 100) {
+                return errorWidget("获取词表异常(" + words.length + ")，请重试");
+            }
             ctx.storage.setJSON(STORAGE_KEY_WORDS, words);
         } catch (e) {
             return errorWidget("加载词表失败");
@@ -52,8 +51,8 @@ export default async function (ctx) {
     const nextIndex = (index + 1) % words.length;
     ctx.storage.setJSON(STORAGE_KEY_INDEX, nextIndex);
 
-    // ── 3. 欧陆词典 URL ──
-    const eudicUrl = "eudic://dict/" + currentWord;
+    // ── 3. 欧陆词典 URL（使用 https 链接确保兼容性） ──
+    const eudicUrl = "https://dict.eudic.net/dicts/en/" + currentWord;
 
     // ── 4. 根据小组件尺寸构建 DSL ──
     const family = ctx.widgetFamily;
