@@ -1,5 +1,5 @@
 name: "红宝书随机单词"
-description: "考研英语红宝书随机单词小组件，每次刷新展示下一个单词，点击打开欧陆词典查词"
+description: "考研英语红宝书随机单词小组件，每次刷新展示下一个单词"
 author: "Tiomehsh"
 
 scriptings:
