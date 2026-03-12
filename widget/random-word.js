@@ -1,10 +1,10 @@
 // 红宝书随机单词 Egern 小组件
 // 数据源: 2026考研英语词汇红宝书
-// 使用 MyMemory API 获取中文释义
+// 使用有道词典 API 获取标准词典释义
 
 const WORD_LIST_URL =
     "https://cdn.jsdelivr.net/gh/busiyiworld/maimemo-export@main/exported/list/2026%E8%80%83%E7%A0%94%E8%8B%B1%E8%AF%AD%E8%AF%8D%E6%B1%87%E7%BA%A2%E5%AE%9D%E4%B9%A6.txt";
-const TRANSLATE_API = "https://api.mymemory.translated.net/get";
+const DICT_API = "https://dict.youdao.com/suggest?num=1&ver=3.0&doctype=json&cache=false&le=en&q=";
 const STORAGE_KEY_WORDS = "redbook_words";
 const STORAGE_KEY_INDEX = "redbook_index";
 const STORAGE_KEY_TRANS = "redbook_trans"; // 翻译缓存
@@ -58,12 +58,13 @@ export default async function (ctx) {
 
     if (!meaning) {
         try {
-            const url = TRANSLATE_API + "?q=" + encodeURIComponent(currentWord) + "&langpair=en|zh-CN";
-            const resp = await ctx.http.get(url, { credentials: "omit" });
+            const resp = await ctx.http.get(DICT_API + encodeURIComponent(currentWord), {
+                credentials: "omit",
+            });
             const data = await resp.json();
-            if (data && data.responseData && data.responseData.translatedText) {
-                meaning = data.responseData.translatedText;
-                // 缓存翻译（限制缓存大小，最多存 500 个）
+            if (data && data.data && data.data.entries && data.data.entries.length > 0) {
+                meaning = data.data.entries[0].explain || "";
+                // 缓存释义（限制大小，最多存 500 个）
                 if (Object.keys(transCache).length > 500) {
                     const keys = Object.keys(transCache);
                     for (let i = 0; i < 100; i++) {
@@ -74,7 +75,7 @@ export default async function (ctx) {
                 ctx.storage.setJSON(STORAGE_KEY_TRANS, transCache);
             }
         } catch (e) {
-            // 翻译失败不影响展示
+            // 查词失败不影响展示
         }
     }
 
