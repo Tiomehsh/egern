@@ -80,6 +80,11 @@ export default async function (ctx) {
     }
 
     if (!meaning) meaning = "";
+    // 截取释义：只保留前两个义项（以分号分隔）
+    if (meaning.length > 0) {
+        const parts = meaning.split("\uff1b");
+        meaning = parts.length > 2 ? parts.slice(0, 2).join("\uff1b") : meaning;
+    }
 
     // ── 4. 根据小组件尺寸构建 DSL ──
     const family = ctx.widgetFamily;
@@ -177,12 +182,6 @@ export default async function (ctx) {
                             textColor: "#E8D44D",
                         },
                         { type: "spacer" },
-                        {
-                            type: "text",
-                            text: (index + 1) + "/" + words.length,
-                            font: { size: "caption2" },
-                            textColor: "#FFFFFF44",
-                        },
                     ],
                 },
                 { type: "spacer" },
@@ -242,13 +241,6 @@ export default async function (ctx) {
                         text: "考研英语 · 红宝书",
                         font: { size: "subheadline", weight: "semibold" },
                         textColor: "#E8D44D",
-                    },
-                    { type: "spacer" },
-                    {
-                        type: "text",
-                        text: (index + 1) + " / " + words.length,
-                        font: { size: "caption1" },
-                        textColor: "#FFFFFF88",
                     },
                 ],
             },
