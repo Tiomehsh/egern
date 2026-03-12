@@ -5,7 +5,7 @@ author: "Tiomehsh"
 scriptings:
   - generic:
       name: "红宝书随机单词"
-      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/redbook-word.js"
+      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/random-word.js"
       timeout: 30
 
 widgets:
