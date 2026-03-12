@@ -254,41 +254,29 @@ export default async function (ctx) {
                     },
                 ],
             },
-            // 主体：单词左 + 释义右
+            // 单词 + 释义（同行开始，释义向下延展）
             {
                 type: "stack",
                 direction: "row",
-                alignItems: "center",
-                gap: 16,
+                alignItems: "start",
+                gap: 12,
                 flex: 1,
                 children: [
-                    // 左侧：单词
                     {
                         type: "text",
                         text: currentWord,
                         font: { size: "title", weight: "bold" },
                         textColor: "#FFFFFF",
                         maxLines: 1,
-                        minScale: 0.5,
+                        minScale: 0.6,
                     },
-                    // 分割线效果
-                    {
-                        type: "stack",
-                        direction: "column",
-                        width: 2,
-                        height: 40,
-                        backgroundColor: "#E8D44D44",
-                        borderRadius: 1,
-                        children: [],
-                    },
-                    // 右侧：释义
                     {
                         type: "text",
                         text: meaning,
                         font: { size: "subheadline" },
                         textColor: "#FFFFFFCC",
                         flex: 1,
-                        maxLines: 3,
+                        maxLines: 4,
                         minScale: 0.5,
                     },
                 ],
