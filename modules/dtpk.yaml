@@ -1,7 +1,7 @@
 name: "地铁跑酷微信小程序修改"
 description: "修改地铁跑酷货币、全角色、满级道具等数据。"
 author: "Tiomehsh"
-homepage: "https://github.com/Tiomehsh/egern"
+
 
 scriptings:
 - http_response:
