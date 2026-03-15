@@ -1,0 +1,11 @@
+name: 地铁跑酷微信小程序修改
+description: 修改地铁跑酷货币、全角色、满级道具等数据。通过本地文件加载。
+mitm:
+  hostnames:
+    - dtpkwx-prod-web.gxpan.cn
+scriptings:
+  - name: 地铁跑酷配置
+    match: ^https?:\/\/dtpkwx-prod-web\.gxpan\.cn\/api\/user\/user_other_save_read
+    script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/main/model/dtpk.js"
+    type: http_response
+    body_required: true
