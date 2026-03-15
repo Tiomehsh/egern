@@ -177,12 +177,15 @@ export default async function (ctx) {
         ],
       },
 
-      // 卡片列表
+      // 卡片列表（水平左右排列）
       {
         type: "stack",
-        direction: "column",
+        direction: "row",
         gap: slots.length === 1 ? 0 : 7,
-        children: cards,
+        children: cards.map(c => ({
+          ...c,
+          flex: 1 // 平均分配水平空间
+        })),
       },
 
       { type: "spacer" },
@@ -208,7 +211,7 @@ function buildCard(result, total, colors) {
   if (error) {
     return {
       type: "stack",
-      direction: "row",
+      direction: "column",
       alignItems: "center",
       gap: 6,
       padding: [9, 11, 9, 11],
@@ -219,9 +222,9 @@ function buildCard(result, total, colors) {
       children: [
         {
           type: "image",
-          src: "sf-symbol:exclamationmark.circle.fill",
-          width: 12,
-          height: 12,
+          src: "sf-symbol:exclamationmark.triangle.fill",
+          width: 14,
+          height: 14,
           color: colors.error,
         },
         {
@@ -231,7 +234,6 @@ function buildCard(result, total, colors) {
           textColor: colors.textPrimary,
           maxLines: 1,
           minScale: 0.8,
-          flex: 1,
         },
         {
           type: "text",
@@ -266,123 +268,144 @@ function buildCard(result, total, colors) {
   const barEmpty = 10 - barFilled;
   const isSingle = total === 1;
 
+  // 恢复单卡片内部为上下结构（适应分栏后的狭小宽度）
   return {
     type: "stack",
-    direction: "row",   // 整体左右布局
-    alignItems: "center",
-    gap: 10,
-    padding: isSingle ? [12, 16, 12, 16] : [10, 14, 10, 14],
+    direction: "column",
+    gap: 0,
+    padding: isSingle ? [11, 13, 11, 13] : [9, 11, 9, 11],
     backgroundColor: colors.bgCard,
-    borderRadius: 12,
+    borderRadius: 11,
     borderWidth: 0.5,
     borderColor: colors.bgCardBorder,
     children: [
-      // ── 左侧：名称 + 到期信息 ──
+      // ── 第一行：图+名称+到期 ──
       {
         type: "stack",
-        direction: "column",
-        alignItems: "start",
-        gap: 4,
-        flex: 1, // 占据左侧其余空间
+        direction: "row",
+        alignItems: "center",
+        gap: 5,
         children: [
           {
-            type: "stack",
-            direction: "row",
-            alignItems: "center",
-            gap: 5,
-            children: [
-              {
-                type: "image",
-                src: "sf-symbol:dot.radiowaves.left.and.right",
-                width: 12,
-                height: 12,
-                color: usageColor,
-              },
-              {
-                type: "text",
-                text: name,
-                font: { size: "caption1", weight: "semibold" },
-                textColor: colors.textPrimary,
-                maxLines: 1,
-                minScale: 0.75,
-              },
-            ],
+            type: "image",
+            src: "sf-symbol:dot.radiowaves.left.and.right",
+            width: 12,
+            height: 12,
+            color: usageColor,
           },
-          ...(expireText
+          {
+            type: "text",
+            text: name,
+            font: { size: "caption1", weight: "semibold" },
+            textColor: colors.textPrimary,
+            maxLines: 1,
+            minScale: 0.75,
+            flex: 1,
+          },
+        ],
+      },
+      
+      ...(expireText
+        ? [
+            {
+              type: "stack",
+              direction: "row",
+              height: 2,
+              children: [],
+            },
+            {
+              type: "text",
+              text: expireText,
+              font: { size: "caption2" },
+              textColor: expireColor,
+              textAlign: "left",
+            },
+          ]
+        : []),
+
+      // ── 进度条间距 ──
+      {
+        type: "stack",
+        direction: "row",
+        height: 8,
+        children: [],
+      },
+
+      // ── 进度条 ──
+      {
+        type: "stack",
+        direction: "row",
+        gap: 3,
+        alignItems: "center",
+        children: [
+          ...(barFilled > 0
             ? [
                 {
-                  type: "text",
-                  text: expireText,
-                  font: { size: "caption2" },
-                  textColor: expireColor,
+                  type: "stack",
+                  flex: barFilled,
+                  height: isSingle ? 5 : 4,
+                  backgroundColor: usageColor,
+                  borderRadius: 99,
+                  children: [],
+                },
+              ]
+            : []),
+          ...(barEmpty > 0
+            ? [
+                {
+                  type: "stack",
+                  flex: barEmpty,
+                  height: isSingle ? 5 : 4,
+                  backgroundColor: colors.progressBg,
+                  borderRadius: 99,
+                  children: [],
                 },
               ]
             : []),
         ],
       },
 
-      // ── 右侧：进度条与数据 ──
+      // ── 间距 ──
       {
         type: "stack",
-        direction: "column",
-        alignItems: "end", // 右侧对齐
-        gap: 6,
-        // 这里给个固定基础宽度或根据内容自适应
+        direction: "row",
+        height: 5,
+        children: [],
+      },
+
+      // ── 用量与百分比 ──
+      {
+        type: "stack",
+        direction: "row",
+        alignItems: "center",
         children: [
-          // 用量数据
           {
-            type: "stack",
-            direction: "row",
-            alignItems: "center",
-            gap: 6,
-            children: [
-              {
-                type: "text",
-                text: `${bytesToSize(used)} / ${bytesToSize(totalBytes)}`,
-                font: { size: "caption2", weight: "medium" },
-                textColor: colors.textSecondary,
-              },
-              {
-                type: "text",
-                text: `${percent.toFixed(1)}%`,
-                font: { size: "caption2", weight: "semibold" },
-                textColor: usageColor,
-              },
-            ],
+             type: "stack",
+             direction: "column",
+             alignItems: "start",
+             children: [
+               {
+                 type: "text",
+                 text: `${bytesToSize(used)}`,
+                 font: { size: "caption2", weight: "medium" },
+                 textColor: colors.textSecondary,
+                 minScale: 0.8
+               },
+               {
+                 type: "text",
+                 text: `/ ${bytesToSize(totalBytes)}`,
+                 font: { size: "caption2" },
+                 textColor: colors.textTertiary,
+                 minScale: 0.8
+               }
+             ]
           },
-          // 进度条
+          { type: "spacer" },
           {
-            type: "stack",
-            direction: "row",
-            gap: 3,
-            alignItems: "center",
-            width: 100, // 限制进度条的宽度，让它在右侧显得小巧紧凑
-            children: [
-              ...(barFilled > 0
-                ? [
-                    {
-                      type: "stack",
-                      flex: barFilled,
-                      height: isSingle ? 5 : 4,
-                      backgroundColor: usageColor,
-                      borderRadius: 99,
-                      children: [],
-                    },
-                  ]
-                : []),
-              ...(barEmpty > 0
-                ? [
-                    {
-                      type: "stack",
-                      flex: barEmpty,
-                      height: isSingle ? 5 : 4,
-                      backgroundColor: colors.progressBg,
-                      borderRadius: 99,
-                      children: [],
-                    },
-                  ]
-                : []),
-            ],
+            type: "text",
+            text: `${percent.toFixed(1)}%`,
+            font: { size: "caption1", weight: "bold" },
+            textColor: usageColor,
           },
         ],
       },
