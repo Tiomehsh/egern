@@ -254,21 +254,12 @@ export default async function (ctx) {
                     },
                 ],
             },
-            // 单词
+            // 单词与释义（同一行开始连着显示，超出自动换行）
             {
                 type: "text",
-                text: currentWord,
+                text: currentWord + (meaning ? "  " + meaning : ""),
                 font: { size: "title", weight: "bold" },
                 textColor: "#FFFFFF",
-                maxLines: 1,
-                minScale: 0.6,
-            },
-            // 释义（纵向排列，占满剩余空间，允许换行）
-            {
-                type: "text",
-                text: meaning,
-                font: { size: "subheadline" },
-                textColor: "#FFFFFFCC",
                 flex: 1,
                 maxLines: 5,
                 minScale: 0.5,
