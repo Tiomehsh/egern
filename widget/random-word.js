@@ -254,14 +254,14 @@ export default async function (ctx) {
                     },
                 ],
             },
-            // 单词与释义（同一行开始连着显示，超出自动换行）
+            // 单词与释义（同行连续显示，清除自带换行符）
             {
                 type: "text",
-                text: currentWord + (meaning ? "  " + meaning : ""),
-                font: { size: "title", weight: "bold" },
+                text: currentWord + (meaning ? "  " + meaning.replace(/\n/g, " ") : ""),
+                font: { size: "headline", weight: "bold" },
                 textColor: "#FFFFFF",
                 flex: 1,
-                maxLines: 5,
+                maxLines: 6,
                 minScale: 0.5,
             },
         ],
