@@ -1,7 +1,12 @@
-name: 订阅流量监控 (左右版)
-description: 自动拉取机场订阅数据，深浅色自适应，左右排版结构。
-author: Tiomehsh
+name: "订阅流量监控(左右版)"
+description: "自动拉取机场订阅数据，深浅色自适应，左右排版结构"
+author: "Tiomehsh"
+
+scriptings:
+  - generic:
+      name: "订阅流量监控(左右版)"
+      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/sub-widget.js"
+      timeout: 30
 
 widgets:
-  - name: sub_widget
-    file: https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/sub-widget.js
+  - name: "订阅流量监控(左右版)"
