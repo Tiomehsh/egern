@@ -254,32 +254,24 @@ export default async function (ctx) {
                     },
                 ],
             },
-            // 单词 + 释义（同行开始，释义向下延展）
+            // 单词
             {
-                type: "stack",
-                direction: "row",
-                alignItems: "start",
-                gap: 12,
+                type: "text",
+                text: currentWord,
+                font: { size: "title", weight: "bold" },
+                textColor: "#FFFFFF",
+                maxLines: 1,
+                minScale: 0.6,
+            },
+            // 释义（纵向排列，占满剩余空间，允许换行）
+            {
+                type: "text",
+                text: meaning,
+                font: { size: "subheadline" },
+                textColor: "#FFFFFFCC",
                 flex: 1,
-                children: [
-                    {
-                        type: "text",
-                        text: currentWord,
-                        font: { size: "title", weight: "bold" },
-                        textColor: "#FFFFFF",
-                        maxLines: 1,
-                        minScale: 0.6,
-                    },
-                    {
-                        type: "text",
-                        text: meaning,
-                        font: { size: "subheadline" },
-                        textColor: "#FFFFFFCC",
-                        flex: 1,
-                        maxLines: 4,
-                        minScale: 0.5,
-                    },
-                ],
+                maxLines: 5,
+                minScale: 0.5,
             },
         ],
     };
