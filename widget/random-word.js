@@ -254,14 +254,23 @@ export default async function (ctx) {
                     },
                 ],
             },
-            // 单词与释义（同行连续显示，清除自带换行符）
+            // 单词
             {
                 type: "text",
-                text: currentWord + (meaning ? "  " + meaning.replace(/\n/g, " ") : ""),
-                font: { size: "headline", weight: "bold" },
+                text: currentWord,
+                font: { size: "title", weight: "bold" },
                 textColor: "#FFFFFF",
+                maxLines: 1,
+                minScale: 0.6,
+            },
+            // 释义（纵向排列，占满剩余空间，允许换行）
+            {
+                type: "text",
+                text: meaning.replace(/\n/g, " "),
+                font: { size: "subheadline" },
+                textColor: "#FFFFFFCC",
                 flex: 1,
-                maxLines: 6,
+                maxLines: 5,
                 minScale: 0.5,
             },
         ],
