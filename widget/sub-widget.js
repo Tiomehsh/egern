@@ -297,7 +297,7 @@ function buildCard(result, total, colors) {
     borderWidth: 0.5,
     borderColor: colors.bgCardBorder,
     children: [
-      // ── 第一行：图+名称+到期 ──
+      // ── 第一行：顶部（图+名称 / 到期时间） ──
       {
         type: "stack",
         direction: "row",
@@ -318,47 +318,50 @@ function buildCard(result, total, colors) {
             textColor: colors.textPrimary,
             maxLines: 1,
             minScale: 0.75,
-            flex: 1,
+            flex: 1, // 将剩余空间推给右侧
           },
+          ...(expireText
+            ? [
+                {
+                  type: "text",
+                  text: expireText,
+                  font: { size: "caption2" },
+                  textColor: expireColor,
+                  textAlign: "right",
+                  minScale: 0.8,
+                },
+              ]
+            : []),
         ],
       },
-      
-      ...(expireText
-        ? [
-            {
-              type: "stack",
-              direction: "row",
-              height: 2,
-              children: [],
-            },
-            {
-              type: "text",
-              text: expireText,
-              font: { size: "caption2" },
-              textColor: expireColor,
-              textAlign: "left",
-            },
-          ]
-        : []),
 
-      // ── 间距 ──
+      // ── 间距（纵向撑开） ──
       {
         type: "stack",
         direction: "row",
-        height: 12, // 稍微拉开与下方数据的距离，因为移除了进度条
+        height: 18, 
         children: [],
       },
 
-      // ── 用量与百分比 ──
+      // ── 第二行：底部（百分比 / 用量数据） ──
       {
         type: "stack",
         direction: "row",
-        alignItems: "center",
+        alignItems: "end", // 底部对齐
         children: [
+          // 左下角：百分比
+          {
+            type: "text",
+            text: `${percent.toFixed(1)}%`,
+            font: { size: "caption1", weight: "bold" },
+            textColor: usageColor,
+          },
+          { type: "spacer" }, // 撑开左右两侧
+          // 右下角：用量数据
           {
              type: "stack",
              direction: "column",
-             alignItems: "start",
+             alignItems: "end", // 右对齐
              children: [
                {
                  type: "text",
@@ -375,13 +378,6 @@ function buildCard(result, total, colors) {
                  minScale: 0.8
                }
              ]
-          },
-          { type: "spacer" },
-          {
-            type: "text",
-            text: `${percent.toFixed(1)}%`,
-            font: { size: "caption1", weight: "bold" },
-            textColor: usageColor,
           },
         ],
       },
