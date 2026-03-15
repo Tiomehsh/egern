@@ -264,8 +264,26 @@ function buildCard(result, total, colors) {
     expireColor = remainDays <= 3 ? colors.warning : colors.textMuted;
   }
 
-  const barFilled = Math.round(Math.min(Math.max(percent, 0), 100) / 10);
-  const barEmpty = 10 - barFilled;
+  // 计算颜色与进度比例
+  const stopPercent = Math.min(Math.max(percent / 100, 0), 1);
+  // 用一个带一点透明度的颜色作为背景进度，以免文字看不清（适配深浅色）
+  const progressBgColor = error
+      ? { light: colors.error.light + "22", dark: colors.error.dark + "33" }
+      : percent >= 90
+      ? { light: colors.error.light + "22", dark: colors.error.dark + "33" }
+      : percent >= 70
+      ? { light: colors.warning.light + "22", dark: colors.warning.dark + "33" }
+      : { light: colors.success.light + "22", dark: colors.success.dark + "33" };
+
+  // 用硬边缘渐变模拟背景进度条
+  const cardGradient = {
+    type: "linear",
+    colors: [progressBgColor, progressBgColor, colors.bgCard, colors.bgCard],
+    stops: [0, stopPercent, stopPercent, 1],
+    startPoint: { x: 0, y: 0 },
+    endPoint: { x: 1, y: 0 }
+  };
+
   const isSingle = total === 1;
 
   // 恢复单卡片内部为上下结构（适应分栏后的狭小宽度）
@@ -274,7 +292,7 @@ function buildCard(result, total, colors) {
     direction: "column",
     gap: 0,
     padding: isSingle ? [11, 13, 11, 13] : [9, 11, 9, 11],
-    backgroundColor: colors.bgCard,
+    backgroundGradient: cardGradient,   // 应用背景进度条
     borderRadius: 11,
     borderWidth: 0.5,
     borderColor: colors.bgCardBorder,
@@ -323,53 +341,11 @@ function buildCard(result, total, colors) {
           ]
         : []),
 
-      // ── 进度条间距 ──
-      {
-        type: "stack",
-        direction: "row",
-        height: 8,
-        children: [],
-      },
-
-      // ── 进度条 ──
-      {
-        type: "stack",
-        direction: "row",
-        gap: 3,
-        alignItems: "center",
-        children: [
-          ...(barFilled > 0
-            ? [
-                {
-                  type: "stack",
-                  flex: barFilled,
-                  height: isSingle ? 5 : 4,
-                  backgroundColor: usageColor,
-                  borderRadius: 99,
-                  children: [],
-                },
-              ]
-            : []),
-          ...(barEmpty > 0
-            ? [
-                {
-                  type: "stack",
-                  flex: barEmpty,
-                  height: isSingle ? 5 : 4,
-                  backgroundColor: colors.progressBg,
-                  borderRadius: 99,
-                  children: [],
-                },
-              ]
-            : []),
-        ],
-      },
-
       // ── 间距 ──
       {
         type: "stack",
         direction: "row",
-        height: 5,
+        height: 12, // 稍微拉开与下方数据的距离，因为移除了进度条
         children: [],
       },
 
