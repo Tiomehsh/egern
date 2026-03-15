@@ -1,6 +1,6 @@
 name: 订阅流量监控 (左右版)
 description: 自动拉取机场订阅数据，深浅色自适应，左右排版结构。
-author: "Egern User"
+author: Tiomehsh
 
 widgets:
   - name: sub_widget
