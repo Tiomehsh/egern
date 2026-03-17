@@ -5,6 +5,6 @@ author: "Tiomehsh"
 scriptings:
   - http_request:
       name: "Emby 请求修改"
-      match: "^https?:\\/\\/(emby\\.pilipiliultra\\.com|streamer-cf\\.pilipiliultra\\.com)\\/"
+      match: "^https?:\\/\\/(emby\\.pilipiliultra\\.com|streamer-cf\\.pilipiliultra\\.com)(:\\d+)?\\/"
       script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/main/modules/emby_fake.js"
       body_required: false
