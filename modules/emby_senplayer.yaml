@@ -1,10 +1,10 @@
-name: "Forward → SenPlayer (Emby 全域伪装)"
-description: "将 Emby 请求伪装为 SenPlayer 客户端"
+name: "Emby 请求修改"
+description: "Emby 请求修改"
 author: "Tiomehsh"
 
 scriptings:
   - http_request:
-      name: "Forward → SenPlayer (Emby 全域伪装)"
+      name: "Emby 请求修改"
       match: "^https?:\\/\\/(emby\\.pilipiliultra\\.com|streamer-cf\\.pilipiliultra\\.com)\\/"
       script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/main/modules/emby_fake.js"
       body_required: false
