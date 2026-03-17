@@ -8,3 +8,9 @@ scriptings:
       match: "^https?:\\/\\/(emby\\.pilipiliultra\\.com|streamer-cf\\.pilipiliultra\\.com)(:\\d+)?\\/"
       script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/main/modules/emby_fake.js"
       body_required: false
+
+mitm:
+  hostnames:
+    includes:
+      - emby.pilipiliultra.com
+      - streamer-cf.pilipiliultra.com
