@@ -192,9 +192,9 @@ function formatPeriodValue(period) {
 function formatPeriodSubtitle(period) {
   if (!period) return '暂无用量';
   if (period.limit > 0) {
-    return `已用 ${formatPercent(period.usedPercent)} · 剩余 ${formatCost(period.remaining)}`;
+    return `已用 ${formatCost(period.used)} · 剩余 ${formatCost(period.remaining)}`;
   }
-  return '未设置额度上限';
+  return `已用 ${formatCost(period.used)} · 不限额`;
 }
 
 function formatPercent(value) {
@@ -386,29 +386,12 @@ function progressRow(metric, period, compact) {
         ],
       },
       {
-        type: 'stack',
-        direction: 'row',
-        alignItems: 'end',
-        children: [
-          {
-            type: 'text',
-            text: formatPeriodValue(period),
-            font: { size: compact ? 'caption2' : 'caption1', weight: 'medium' },
-            textColor: COLORS.title,
-            maxLines: 1,
-            minScale: 0.7,
-          },
-          { type: 'spacer' },
-          {
-            type: 'text',
-            text: formatPeriodSubtitle(period),
-            font: { size: 'caption2' },
-            textColor: COLORS.muted,
-            textAlign: 'right',
-            maxLines: 1,
-            minScale: 0.65,
-          },
-        ],
+        type: 'text',
+        text: formatPeriodSubtitle(period),
+        font: { size: 'caption2' },
+        textColor: COLORS.muted,
+        maxLines: 1,
+        minScale: 0.65,
       },
     ],
   };

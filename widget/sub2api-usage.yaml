@@ -1,5 +1,5 @@
 name: "Sub2API 额度用量"
-version: 1.2.0
+version: 1.2.1
 description: "在 Egern 小组件中用三条进度条显示 Sub2API 今日、本周、月度额度用量。"
 author: "Tiomehsh"
 homepage: "https://github.com/Tiomehsh/egern"
