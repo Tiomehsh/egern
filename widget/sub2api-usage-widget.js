@@ -266,20 +266,24 @@ function unwrapApiResponse(payload, fallbackTitle) {
 }
 
 function renderUsageWidget(ctx, usage) {
-  const compact = isCompactFamily(ctx?.widgetFamily);
+  const family = ctx?.widgetFamily;
+  const compact = isCompactFamily(family);
+  const medium = isMediumFamily(family);
+  const large = isLargeFamily(family);
+  const dense = compact || medium;
   const now = new Date();
   const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const children = medium
+    ? [progressRows(usage, dense, large)]
+    : [headerRow(usage, timeStr, dense), progressRows(usage, dense, large)];
 
   return {
     type: 'widget',
     refreshAfter: refreshAfter(10),
-    padding: compact ? 12 : [13, 14, 12, 14],
-    gap: compact ? 7 : 10,
+    padding: medium ? [7, 10, 7, 10] : compact ? 10 : [13, 14, 12, 14],
+    gap: dense ? 5 : 10,
     backgroundColor: COLORS.background,
-    children: [
-      headerRow(usage, timeStr, compact),
-      progressRows(usage, compact),
-    ],
+    children,
   };
 }
 
@@ -323,12 +327,16 @@ function headerRow(usage, timeStr, compact) {
   };
 }
 
-function progressRows(usage, compact) {
+function progressRows(usage, compact, fillHeight = false) {
   return {
     type: 'stack',
     direction: 'column',
-    gap: compact ? 6 : 8,
-    children: METRICS.map((metric) => progressRow(metric, usage[metric.key], compact)),
+    gap: compact ? 5 : 8,
+    flex: fillHeight ? 1 : undefined,
+    children: METRICS.map((metric) => ({
+      ...progressRow(metric, usage[metric.key], compact),
+      flex: fillHeight ? 1 : undefined,
+    })),
   };
 }
 
@@ -348,8 +356,8 @@ function progressRow(metric, period, compact) {
   return {
     type: 'stack',
     direction: 'column',
-    gap: compact ? 3 : 5,
-    padding: compact ? [7, 9, 7, 9] : [9, 11, 9, 11],
+    gap: compact ? 2 : 5,
+    padding: compact ? [5, 8, 5, 8] : [9, 11, 9, 11],
     backgroundGradient: rowGradient,
     borderRadius: 12,
     borderWidth: 0.5,
@@ -449,6 +457,14 @@ function refreshAfter(minutes) {
 
 function isCompactFamily(family) {
   return family === 'systemSmall' || family === 'accessoryRectangular' || family === 'accessoryInline';
+}
+
+function isMediumFamily(family) {
+  return family === 'systemMedium';
+}
+
+function isLargeFamily(family) {
+  return family === 'systemLarge' || family === 'systemExtraLarge';
 }
 
 function toFiniteNumber(value) {
