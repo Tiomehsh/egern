@@ -13,6 +13,7 @@ const COLORS = {
   purple: { light: '#8D39D5', dark: '#D7A8FF' },
   purpleBg: { light: '#F1E3FA', dark: '#3E2D4C' },
   shadow: { light: '#9CB7B2', dark: '#000000' },
+  progressBg: { light: '#E5E7EB', dark: '#334155' },
   warning: { light: '#B45309', dark: '#FBBF24' },
   danger: { light: '#B91C1C', dark: '#FCA5A5' },
 };
@@ -266,132 +267,164 @@ function unwrapApiResponse(payload, fallbackTitle) {
 
 function renderUsageWidget(ctx, usage) {
   const compact = isCompactFamily(ctx?.widgetFamily);
-  const content = compact ? compactMetricRows(usage) : dashboardGrid(usage);
+  const now = new Date();
+  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
   return {
     type: 'widget',
     refreshAfter: refreshAfter(10),
-    padding: compact ? 12 : 10,
-    gap: compact ? 7 : 0,
+    padding: compact ? 12 : [13, 14, 12, 14],
+    gap: compact ? 7 : 10,
     backgroundColor: COLORS.background,
-    children: [content],
+    children: [
+      headerRow(usage, timeStr, compact),
+      progressRows(usage, compact),
+    ],
   };
 }
 
-function compactMetricRows(usage) {
-  return {
-    type: 'stack',
-    direction: 'column',
-    gap: 5,
-    children: METRICS.map((metric) => ({
-      type: 'stack',
-      direction: 'row',
-      alignItems: 'center',
-      gap: 7,
-      children: [
-        {
-          type: 'text',
-          text: metric.label,
-          font: { size: 'caption2', weight: 'medium' },
-          textColor: COLORS.muted,
-          maxLines: 1,
-        },
-        { type: 'spacer' },
-        {
-          type: 'text',
-          text: metric.formatter(usage[metric.key]),
-          font: { size: 'caption1', weight: 'semibold' },
-          textColor: metric.valueColor || COLORS.value,
-          textAlign: 'right',
-          maxLines: 1,
-          minScale: 0.65,
-        },
-      ],
-    })),
-  };
-}
-
-function dashboardGrid(usage) {
-  const rows = [];
-  for (let index = 0; index < METRICS.length; index += 2) {
-    rows.push({
-      type: 'stack',
-      direction: 'row',
-      gap: 10,
-      flex: 1,
-      children: METRICS.slice(index, index + 2).map((metric) => metricCard(metric, usage)),
-    });
-  }
-  return {
-    type: 'stack',
-    direction: 'column',
-    gap: 10,
-    flex: 1,
-    children: rows,
-  };
-}
-
-function metricCard(metric, usage) {
+function headerRow(usage, timeStr, compact) {
   return {
     type: 'stack',
     direction: 'row',
     alignItems: 'center',
-    flex: 1,
-    gap: 10,
-    padding: [10, 12],
-    backgroundColor: COLORS.panel,
-    borderRadius: 18,
-    shadowColor: COLORS.shadow,
-    shadowRadius: 3,
-    shadowOffset: { x: 0, y: 1 },
+    gap: 6,
+    children: [
+      {
+        type: 'image',
+        src: 'sf-symbol:chart.bar.fill',
+        width: compact ? 12 : 13,
+        height: compact ? 12 : 13,
+        color: COLORS.blue,
+      },
+      {
+        type: 'text',
+        text: usage.groupName || 'Sub2API 额度',
+        font: { size: compact ? 'caption2' : 'caption1', weight: 'semibold' },
+        textColor: COLORS.title,
+        maxLines: 1,
+        minScale: 0.75,
+      },
+      { type: 'spacer' },
+      {
+        type: 'image',
+        src: 'sf-symbol:clock',
+        width: 11,
+        height: 11,
+        color: COLORS.muted,
+      },
+      {
+        type: 'text',
+        text: timeStr,
+        font: { size: 'caption2' },
+        textColor: COLORS.muted,
+      },
+    ],
+  };
+}
+
+function progressRows(usage, compact) {
+  return {
+    type: 'stack',
+    direction: 'column',
+    gap: compact ? 6 : 8,
+    children: METRICS.map((metric) => progressRow(metric, usage[metric.key], compact)),
+  };
+}
+
+function progressRow(metric, period, compact) {
+  const percent = period?.usedPercent ?? 0;
+  const stopPercent = Math.min(Math.max(percent / 100, 0), 1);
+  const usageColor = progressColor(percent, metric.iconColor);
+  const progressBgColor = tintColor(usageColor, percent >= 70 ? 0.28 : 0.22);
+  const rowGradient = {
+    type: 'linear',
+    colors: [progressBgColor, progressBgColor, COLORS.panel, COLORS.panel],
+    stops: [0, stopPercent, stopPercent, 1],
+    startPoint: { x: 0, y: 0 },
+    endPoint: { x: 1, y: 0 },
+  };
+
+  return {
+    type: 'stack',
+    direction: 'column',
+    gap: compact ? 3 : 5,
+    padding: compact ? [7, 9, 7, 9] : [9, 11, 9, 11],
+    backgroundGradient: rowGradient,
+    borderRadius: 12,
+    borderWidth: 0.5,
+    borderColor: COLORS.progressBg,
     children: [
       {
         type: 'stack',
-        direction: 'column',
+        direction: 'row',
         alignItems: 'center',
-        width: 46,
-        height: 46,
-        padding: 11,
-        backgroundColor: metric.iconBackground,
-        borderRadius: 12,
+        gap: 6,
         children: [
           {
             type: 'image',
             src: metric.icon,
-            width: 24,
-            height: 24,
-            color: metric.iconColor,
+            width: compact ? 11 : 13,
+            height: compact ? 11 : 13,
+            color: usageColor,
+          },
+          {
+            type: 'text',
+            text: metric.label,
+            font: { size: compact ? 'caption2' : 'caption1', weight: 'semibold' },
+            textColor: COLORS.value,
+            maxLines: 1,
+          },
+          { type: 'spacer' },
+          {
+            type: 'text',
+            text: formatPercent(percent),
+            font: { size: compact ? 'caption2' : 'caption1', weight: 'bold' },
+            textColor: usageColor,
+            textAlign: 'right',
           },
         ],
       },
       {
         type: 'stack',
-        direction: 'column',
-        alignItems: 'start',
-        flex: 1,
-        gap: 3,
+        direction: 'row',
+        alignItems: 'end',
         children: [
           {
             type: 'text',
-            text: metric.label,
-            ...TOKEN_LABEL_TEXT_STYLE,
-          },
-          {
-            type: 'text',
-            text: metric.formatter(usage[metric.key]),
-            font: { size: 'largeTitle', weight: 'bold' },
-            textColor: metric.valueColor || COLORS.value,
+            text: formatPeriodValue(period),
+            font: { size: compact ? 'caption2' : 'caption1', weight: 'medium' },
+            textColor: COLORS.title,
             maxLines: 1,
-            minScale: 0.45,
+            minScale: 0.7,
           },
+          { type: 'spacer' },
           {
             type: 'text',
-            text: metric.subtitle(usage[metric.key]),
-            ...(metric.subtitleStyle || MUTED_SUBTITLE_TEXT_STYLE),
+            text: formatPeriodSubtitle(period),
+            font: { size: 'caption2' },
+            textColor: COLORS.muted,
+            textAlign: 'right',
+            maxLines: 1,
+            minScale: 0.65,
           },
         ],
       },
     ],
+  };
+}
+
+function progressColor(percent, fallback) {
+  if (percent >= 90) return COLORS.danger;
+  if (percent >= 70) return COLORS.warning;
+  return fallback || COLORS.green;
+}
+
+function tintColor(color, alpha) {
+  const suffix = Math.round(Math.min(Math.max(alpha, 0), 1) * 255).toString(16).padStart(2, '0');
+  return {
+    light: `${color.light}${suffix}`,
+    dark: `${color.dark}${suffix}`,
   };
 }
 

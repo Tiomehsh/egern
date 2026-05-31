@@ -59,7 +59,7 @@ https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/sub-widget.yaml
 
 ### 功能
 
-- 📊 显示今日、本周、月度已用额度 / 总额度
+- 📊 用三条进度条显示今日、本周、月度已用额度 / 总额度
 - 🧮 显示已用百分比和剩余额度
 - 🔐 通过 Sub2API 邮箱 + 密码登录获取管理端 access token
 - 🌗 适配深色/浅色模式
