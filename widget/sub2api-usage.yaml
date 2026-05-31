@@ -1,0 +1,31 @@
+name: "Sub2API 额度用量"
+version: 1.1.1
+description: "在 Egern 小组件中显示 Sub2API 今日用量、本周用量和月度用量。"
+author: "Tiomehsh"
+homepage: "https://github.com/Tiomehsh/egern"
+manual: "https://github.com/Tiomehsh/egern#sub2api-额度用量"
+icon: chart.bar.xaxis
+
+env_schema:
+  BASE_URL:
+    name: 网站 URL
+    description: Sub2API 站点根地址，例如 https://example.com。不要填写 /admin/usage。
+  EMAIL:
+    name: 登录账号
+    description: Sub2API 登录邮箱。
+  PASSWORD:
+    name: 登录密码
+    description: Sub2API 登录密码。此值仅保存在你的 Egern 配置中。
+  SUBSCRIPTION_INDEX:
+    name: 订阅序号
+    description: 可选；active subscriptions 的 1-based 序号，默认 1。
+
+scriptings:
+  - generic:
+      name: "Sub2API 额度用量"
+      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/sub2api-usage-widget.js"
+      timeout: 20
+
+widgets:
+  - name: "Sub2API 额度用量"
+    script_name: "Sub2API 额度用量"

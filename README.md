@@ -53,3 +53,29 @@ https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/sub-widget.yaml
 如果你有更多的订阅链接，顺延添加 `NAME2`/`URL2`/`RESET2`。
 
 ---
+## Sub2API 额度用量
+
+在 Egern 小组件中显示 Sub2API 今日用量、本周用量和月度用量，数据来自 Sub2API active subscription 的日/周/月美元额度字段。
+
+### 功能
+
+- 📊 显示今日、本周、月度已用额度 / 总额度
+- 🧮 显示已用百分比和剩余额度
+- 🔐 通过 Sub2API 邮箱 + 密码登录获取管理端 access token
+- 🌗 适配深色/浅色模式
+
+### 安装
+
+在 Egern 中导入以下模块链接：
+
+```
+https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/sub2api-usage.yaml
+```
+
+**配置环境变量（必填）：**
+- `BASE_URL` = Sub2API 站点根地址，例如 `https://example.com`
+- `EMAIL` = Sub2API 登录邮箱
+- `PASSWORD` = Sub2API 登录密码
+- `SUBSCRIPTION_INDEX` = 订阅序号，可选，默认 `1`
+
+---
