@@ -56,14 +56,14 @@ https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/sub-widget.yaml
 
 ## 电量监控
 
-按照 `pronounAI/Egern` 的 `Subscription-Widget.js` 视觉与交互结构改造，直接查询 BB 电表接口，并适配主屏幕小、中、大尺寸及锁屏小组件。
+按照 `pronounAI/Egern` 的 `Subscription-Widget.js` 结构改造，刷新时先触发主动抄表，再显示最新读数，并适配主屏幕及锁屏小组件。
 
 ### 功能
 
-- ⚡ 展示剩余电量、告警阈值和安全度仪表盘
-- 📈 展示累计用电、电价、估算余额和在线状态
-- 🕒 检查电表数据更新时间，过期数据会显示警告
-- 💾 接口暂时失败时使用上次成功缓存，并明确标记“缓存数据”
+- ⚡ 每次到达抄表间隔后调用 `sendMeterPacketTask` 主动抄表
+- 🔄 轮询电表接口，等待 `remainingPowerTime` 更新后再渲染
+- 🧾 界面只保留标题、当前电量（固定两位小数）、告警阈值和数据时间
+- 💾 接口暂时失败时使用上次成功缓存
 - 🌗 支持玻璃透明和经典深浅色两种风格
 - 🔐 Token 只通过 Egern 环境变量保存，不写入公开脚本
 
@@ -83,8 +83,12 @@ https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/electricity-widget.
 - `METER_NAME`：覆盖小组件显示名称，可选
 - `POWER_THRESHOLD`：固定告警阈值，可选；留空采用接口的 `balanceThreshold`
 - `MAX_DATA_AGE_HOURS`：数据过期时长，默认 `48`
-- `REFRESH_HOURS`：刷新间隔，默认 `1`
+- `REFRESH_HOURS`：小组件刷新间隔，默认 `1`
 - `WIDGET_STYLE`：`glass`（默认）或 `classic`
+- `METER_READ_ENABLED`：是否主动抄表，默认 `true`
+- `METER_READ_INTERVAL_MINUTES`：两次主动抄表的最短间隔，默认 `30`
+- `METER_READ_WAIT_SECONDS`：主动抄表后最多等待时间，默认 `12`
+- `METER_READ_POLL_SECONDS`：检查最新读数的间隔，默认 `2`
 
 ---
 ## Sub2API 额度用量
