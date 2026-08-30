@@ -311,6 +311,20 @@ function formatFixed(value) {
   return Number.isFinite(value) ? value.toFixed(2) : '--';
 }
 
+function iconSrc(color = '#7B7B84') {
+  return `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M13 2 3 14h7l-1 8 10-12h-7l1-8z' fill='${color}'/></svg>`;
+}
+
+function titleRow(name, color, size = 12, iconSize = 13) {
+  return {
+    type: 'stack', direction: 'row', alignItems: 'center', gap: 6,
+    children: [
+      { type: 'image', src: iconSrc(color), width: iconSize, height: iconSize, resizeMode: 'contain' },
+      text(name, size, C.dim, 'bold', { minScale: 0.65 })
+    ]
+  };
+}
+
 function formatTime(timestamp, compact = false) {
   if (!timestamp) return '--';
   const date = new Date(timestamp);
@@ -347,7 +361,7 @@ function emptyWidget(data, ctx, family) {
     gap: 8,
     refreshAfter: refreshAfter(ctx),
     children: [
-      text(data.name || '电量监控', compact ? 11 : 12, C.dim, 'bold', { minScale: 0.7 }),
+      titleRow(data.name || '电量监控', '#FF626A', compact ? 11 : 12, compact ? 11 : 13),
       { type: 'spacer' },
       text('--', compact ? 32 : 40, C.fail, 'bold', {
         font: { size: compact ? 32 : 40, weight: 'bold', family: 'Menlo' }
@@ -356,7 +370,7 @@ function emptyWidget(data, ctx, family) {
       { type: 'spacer' },
       {
         type: 'stack', direction: 'row',
-        children: [text('阈值 --', 10, C.dim, 'medium'), { type: 'spacer' }, text('时间 --', 10, C.dim, 'medium')]
+        children: [{ type: 'spacer' }, text('时间 --', 10, C.dim, 'medium')]
       }
     ]
   };
@@ -378,7 +392,7 @@ function homeWidget(data, ctx, family) {
     gap: small ? 7 : 10,
     refreshAfter: refreshAfter(ctx),
     children: [
-      text(meter.name, small ? 11 : large ? 14 : 12, C.dim, 'bold', { minScale: 0.65 }),
+      titleRow(meter.name, color, small ? 11 : large ? 14 : 12, small ? 11 : 13),
       { type: 'spacer' },
       {
         type: 'stack', direction: 'row', alignItems: 'end', gap: 6,
@@ -394,7 +408,6 @@ function homeWidget(data, ctx, family) {
       {
         type: 'stack', direction: 'row', alignItems: 'center',
         children: [
-          text(`阈值 ${formatFixed(meter.threshold)}`, small ? 9 : 10, C.dim, 'medium', { minScale: 0.7 }),
           { type: 'spacer' },
           text(formatTime(meter.dataAt), small ? 9 : 10, meter.stale ? C.warn : C.dim, 'medium', { minScale: 0.7 })
         ]
@@ -425,12 +438,17 @@ function accessoryWidget(data, family) {
   return {
     type: 'widget', gap: 2,
     children: [
-      text(meter.name, 10, C.text, 'semibold', { minScale: 0.65 }),
+      {
+        type: 'stack', direction: 'row', alignItems: 'center', gap: 4,
+        children: [
+          { type: 'image', src: iconSrc('#FFBE3F'), width: 10, height: 10, resizeMode: 'contain' },
+          text(meter.name, 10, C.text, 'semibold', { minScale: 0.65 })
+        ]
+      },
       text(`${formatFixed(meter.remaining)} 度`, 15, color, 'bold', { minScale: 0.65 }),
       {
         type: 'stack', direction: 'row',
         children: [
-          text(`阈值 ${formatFixed(meter.threshold)}`, 9, C.dim, 'medium'),
           { type: 'spacer' },
           text(formatTime(meter.dataAt, true), 9, C.dim, 'medium')
         ]

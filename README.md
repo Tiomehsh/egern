@@ -62,7 +62,7 @@ https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/sub-widget.yaml
 
 - ⚡ 每次到达抄表间隔后调用 `sendMeterPacketTask` 主动抄表
 - 🔄 轮询电表接口，等待 `remainingPowerTime` 更新后再渲染
-- 🧾 界面只保留标题、当前电量（固定两位小数）、告警阈值和数据时间
+- 🧾 界面只保留闪电图标标题、当前电量（固定两位小数）和数据时间
 - 💾 接口暂时失败时使用上次成功缓存
 - 🌗 支持玻璃透明和经典深浅色两种风格
 - 🔐 Token 只通过 Egern 环境变量保存，不写入公开脚本
@@ -81,7 +81,7 @@ https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/electricity-widget.
 - `METER_ID`：指定电表 `measureId`，可选；留空时优先选择第一块在线电表
 - `METER_NO`：也可以按电表编号选择，可选
 - `METER_NAME`：覆盖小组件显示名称，可选
-- `POWER_THRESHOLD`：固定告警阈值，可选；留空采用接口的 `balanceThreshold`
+- `POWER_THRESHOLD`：低电量变色阈值（界面不显示），可选；留空采用接口的 `balanceThreshold`
 - `MAX_DATA_AGE_HOURS`：数据过期时长，默认 `48`
 - `REFRESH_HOURS`：小组件刷新间隔，默认 `1`
 - `WIDGET_STYLE`：`glass`（默认）或 `classic`
