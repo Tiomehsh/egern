@@ -1,0 +1,7 @@
+Electricity Balance Widget
+
+This widget is a modified derivative of Subscription-Widget.js from:
+https://github.com/pronounAI/Egern/blob/main/Subscription-Widget.js
+
+The original work is distributed under the Apache License, Version 2.0.
+Modifications adapt the subscription traffic widget to query and display BB electricity meter data.

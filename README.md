@@ -53,6 +53,40 @@ https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/sub-widget.yaml
 如果你有更多的订阅链接，顺延添加 `NAME2`/`URL2`/`RESET2`。
 
 ---
+
+## 电量监控
+
+按照 `pronounAI/Egern` 的 `Subscription-Widget.js` 视觉与交互结构改造，直接查询 BB 电表接口，并适配主屏幕小、中、大尺寸及锁屏小组件。
+
+### 功能
+
+- ⚡ 展示剩余电量、告警阈值和安全度仪表盘
+- 📈 展示累计用电、电价、估算余额和在线状态
+- 🕒 检查电表数据更新时间，过期数据会显示警告
+- 💾 接口暂时失败时使用上次成功缓存，并明确标记“缓存数据”
+- 🌗 支持玻璃透明和经典深浅色两种风格
+- 🔐 Token 只通过 Egern 环境变量保存，不写入公开脚本
+
+### 安装
+
+在 Egern 中导入以下模块链接：
+
+```
+https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/electricity-widget.yaml
+```
+
+**配置环境变量：**
+
+- `ELECTRICITY_API_TOKEN`：电表接口 Bearer Token，必填；可以只填 Token，也可以包含 `Bearer ` 前缀
+- `METER_ID`：指定电表 `measureId`，可选；留空时优先选择第一块在线电表
+- `METER_NO`：也可以按电表编号选择，可选
+- `METER_NAME`：覆盖小组件显示名称，可选
+- `POWER_THRESHOLD`：固定告警阈值，可选；留空采用接口的 `balanceThreshold`
+- `MAX_DATA_AGE_HOURS`：数据过期时长，默认 `48`
+- `REFRESH_HOURS`：刷新间隔，默认 `1`
+- `WIDGET_STYLE`：`glass`（默认）或 `classic`
+
+---
 ## Sub2API 额度用量
 
 在 Egern 小组件中显示 Sub2API 今日用量、本周用量和月度用量，数据来自 Sub2API active subscription 的日/周/月美元额度字段。

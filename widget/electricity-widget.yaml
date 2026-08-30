@@ -1,0 +1,12 @@
+name: "电量监控"
+description: "查询 BB 电表剩余电量，显示阈值、累计用电、在线状态与数据更新时间"
+author: "Tiomehsh"
+
+scriptings:
+  - generic:
+      name: "电量监控"
+      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/electricity-widget.js"
+      timeout: 30
+
+widgets:
+  - name: "电量监控"
