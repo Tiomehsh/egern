@@ -27,12 +27,15 @@ const C = {
   dim:   { light: '#7B7B84', dark: '#85858E' },
   ok:    { light: '#2F9E58', dark: '#76E39A' },
   warn:  { light: '#A06400', dark: '#FFBE3F' },
-  fail:  { light: '#D64545', dark: '#FF626A' }
+  fail:  { light: '#D64545', dark: '#FF626A' },
+  track: { light: '#ECEDEF', dark: '#252529' },
+  line:  { light: '#E1E2E5', dark: '#303035' }
 };
 
 const API_URL = 'https://bb2.minyie.cn/ruoyi-bb/platform/bar/user/getMeterDataByUser';
 const METER_READ_URL = 'https://bb2.minyie.cn/ruoyi-bb/platform/device/sendMeterPacketTask';
 const METER_READ_RESULT_URL = 'https://bb2.minyie.cn/ruoyi-bb/platform/device/getReturnBySendMeterPakcet';
+const USAGE_REPORT_URL = 'https://bb2.minyie.cn/ruoyi-bb/platform/bar/consume/program/getConsEfficiencyByMonth';
 const BUSINESS_TYPE = '1001';
 
 function stringEnv(ctx, key, fallback = '') {
@@ -163,6 +166,54 @@ async function fetchMeter(ctx, apiUrl, token, meterId, meterNo) {
   return selectMeter(payload?.data?.list, meterId, meterNo);
 }
 
+function localDateKey(date) {
+  return `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function localMonthKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function shiftedDay(base, offset) {
+  const date = new Date(base);
+  date.setDate(date.getDate() + offset);
+  return date;
+}
+
+async function fetchRecentUsage(ctx, token, meter, dayCount = 7) {
+  const projectId = String(meter?.projectId || '').trim();
+  const measureId = meter?.measureId;
+  if (!projectId || measureId == null || measureId === '') throw new Error('电表缺少 projectId 或 measureId');
+
+  const today = new Date();
+  today.setHours(12, 0, 0, 0);
+  const dates = Array.from({ length: dayCount }, (_, index) => shiftedDay(today, index - dayCount + 1));
+  const months = [...new Set(dates.map(localMonthKey))];
+  const values = new Map();
+
+  for (const month of months) {
+    const payload = await postJson(ctx, USAGE_REPORT_URL, token, {
+      projectId,
+      measureType: '1',
+      month,
+      measureId,
+      startDate: '',
+      endDate: '',
+      dateType: 'month'
+    });
+    for (const row of payload?.data?.resultData || []) {
+      const value = Number(row?.pactTotal);
+      if (row?.ddate && Number.isFinite(value)) values.set(String(row.ddate), value);
+    }
+  }
+
+  return dates.map(date => ({
+    key: localDateKey(date),
+    timestamp: date.getTime(),
+    value: values.has(localDateKey(date)) ? values.get(localDateKey(date)) : null
+  }));
+}
+
 async function sendMeterRead(ctx, token, meter) {
   const meterNo = String(meter?.measureNo || '').trim();
   const projectId = String(meter?.projectId || '').trim();
@@ -239,7 +290,7 @@ function normalizeMeter(ctx, meter) {
   };
 }
 
-async function loadData(ctx) {
+async function loadData(ctx, includeUsage = false) {
   const token = normalizeToken(ctx.env?.ELECTRICITY_API_TOKEN || ctx.env?.BB_TOKEN);
   const meterId = stringEnv(ctx, 'METER_ID');
   const meterNo = stringEnv(ctx, 'METER_NO');
@@ -250,9 +301,13 @@ async function loadData(ctx) {
   const selector = meterId || meterNo || 'first-online';
   const key = storageKey(apiUrl, selector);
   const readKey = `${key}.active-read`;
+  const cached = ctx.storage?.getJSON(key);
 
   try {
     let rawMeter = await fetchMeter(ctx, apiUrl, token, meterId, meterNo);
+    const usagePromise = includeUsage
+      ? fetchRecentUsage(ctx, token, rawMeter, 7).catch(() => cached?.usage || [])
+      : Promise.resolve(cached?.usage || []);
     const readEnabled = boolEnv(ctx, 'METER_READ_ENABLED', true);
     const readInterval = numberEnv(ctx, 'METER_READ_INTERVAL_MINUTES', 30, 1, 24 * 60) * 60000;
     const lastRead = ctx.storage?.getJSON(readKey);
@@ -282,11 +337,11 @@ async function loadData(ctx) {
     }
 
     const meter = normalizeMeter(ctx, rawMeter);
-    const result = { mode: 'live', name: meter.name, meter, updatedAt: Date.now() };
+    const usage = await usagePromise;
+    const result = { mode: 'live', name: meter.name, meter, usage, updatedAt: Date.now() };
     ctx.storage?.setJSON(key, result);
     return result;
   } catch (error) {
-    const cached = ctx.storage?.getJSON(key);
     if (cached?.meter) {
       return {
         ...cached,
@@ -336,6 +391,20 @@ function formatTime(timestamp, compact = false) {
   return compact ? `${hour}:${minute}` : `${month}-${day} ${hour}:${minute}`;
 }
 
+function usageValue(value) {
+  return Number.isFinite(value) ? value.toFixed(2) : '--';
+}
+
+function usageDateLabel(timestamp) {
+  const date = new Date(timestamp);
+  return `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function recentUsage(data, count) {
+  const usage = Array.isArray(data.usage) ? data.usage : [];
+  return usage.slice(-count);
+}
+
 function text(value, size, color, weight = 'regular', extra = {}) {
   return {
     type: 'text',
@@ -376,44 +445,155 @@ function emptyWidget(data, ctx, family) {
   };
 }
 
-function homeWidget(data, ctx, family) {
-  if (!data.meter) return emptyWidget(data, ctx, family);
-  const meter = data.meter;
-  const small = family === 'systemSmall';
-  const large = family === 'systemLarge' || family === 'systemExtraLarge';
-  const valueSize = small ? 31 : large ? 52 : 39;
-  const padding = small ? [16, 17] : large ? [24, 26] : [18, 21];
-  const color = statusColor(data);
-
+function balanceValue(meter, color, size) {
   return {
-    type: 'widget',
-    ...rootBackground(ctx),
-    padding,
-    gap: small ? 7 : 10,
-    refreshAfter: refreshAfter(ctx),
+    type: 'stack', direction: 'row', alignItems: 'end', gap: 6,
     children: [
-      titleRow(meter.name, color, small ? 11 : large ? 14 : 12, small ? 11 : 13),
-      { type: 'spacer' },
+      text(formatFixed(meter.remaining), size, color, 'bold', {
+        font: { size, weight: 'bold', family: 'Menlo' }, minScale: 0.5
+      }),
+      text('度', size >= 40 ? 13 : 11, C.dim, 'semibold'),
+      { type: 'spacer' }
+    ]
+  };
+}
+
+function usageBarRow(label, item, maxValue) {
+  const ratio = Number.isFinite(item?.value) && maxValue > 0 ? item.value / maxValue : 0;
+  return {
+    type: 'stack', direction: 'row', alignItems: 'center', gap: 4,
+    children: [
+      text(label, 9, C.dim, 'medium', { width: 27 }),
       {
-        type: 'stack', direction: 'row', alignItems: 'end', gap: 6,
-        children: [
-          text(formatFixed(meter.remaining), valueSize, color, 'bold', {
-            font: { size: valueSize, weight: 'bold', family: 'Menlo' }, minScale: 0.55
-          }),
-          text('度', small ? 11 : 13, C.dim, 'semibold'),
-          { type: 'spacer' }
-        ]
+        type: 'stack', width: 42, height: 6, backgroundColor: C.track, borderRadius: 3,
+        children: ratio > 0 ? [{
+          type: 'stack', width: Math.max(3, 42 * ratio), height: 6,
+          backgroundColor: C.ok, borderRadius: 3
+        }] : []
       },
       { type: 'spacer' },
-      {
-        type: 'stack', direction: 'row', alignItems: 'center',
+      text(usageValue(item?.value), 9, C.text, 'semibold', { width: 35, textAlign: 'right', minScale: 0.7 })
+    ]
+  };
+}
+
+function mediumUsageChart(data) {
+  const items = recentUsage(data, 3).reverse();
+  while (items.length < 3) items.push(null);
+  const maxValue = Math.max(1, ...items.map(item => Number.isFinite(item?.value) ? item.value : 0));
+  const labels = ['今天', '昨天', '前天'];
+  return {
+    type: 'stack', flex: 1, gap: 9,
+    children: [
+      text('近三日用电 / 度', 10, C.dim, 'bold'),
+      ...items.map((item, index) => usageBarRow(labels[index], item, maxValue))
+    ]
+  };
+}
+
+function sevenDayUsageChart(data, extraLarge = false) {
+  const items = recentUsage(data, 7);
+  const maxValue = Math.max(1, ...items.map(item => Number.isFinite(item?.value) ? item.value : 0));
+  const normalized = [...items];
+  while (normalized.length < 7) normalized.unshift(null);
+  const maxBarHeight = extraLarge ? 78 : 62;
+
+  return {
+    type: 'stack', direction: 'row', height: extraLarge ? 118 : 102, gap: extraLarge ? 12 : 6,
+    children: normalized.map(item => {
+      const ratio = Number.isFinite(item?.value) && maxValue > 0 ? item.value / maxValue : 0;
+      const barHeight = ratio > 0 ? Math.max(3, maxBarHeight * ratio) : 2;
+      return {
+        type: 'stack', flex: 1, alignItems: 'center', gap: 3,
         children: [
           { type: 'spacer' },
-          text(formatTime(meter.dataAt), small ? 9 : 10, meter.stale ? C.warn : C.dim, 'medium', { minScale: 0.7 })
+          text(usageValue(item?.value), extraLarge ? 10 : 8, C.text, 'semibold', { textAlign: 'center', minScale: 0.55 }),
+          {
+            type: 'stack', width: extraLarge ? 21 : 16, height: barHeight,
+            backgroundColor: Number.isFinite(item?.value) ? C.ok : C.track,
+            borderRadius: 4
+          },
+          text(item ? usageDateLabel(item.timestamp) : '--', extraLarge ? 9 : 8, C.dim, 'medium', { textAlign: 'center', minScale: 0.65 })
         ]
+      };
+    })
+  };
+}
+
+function smallHomeWidget(data, ctx) {
+  const meter = data.meter;
+  const color = statusColor(data);
+  return {
+    type: 'widget', ...rootBackground(ctx), padding: [16, 17], gap: 7,
+    refreshAfter: refreshAfter(ctx),
+    children: [
+      titleRow(meter.name, '#FFBE3F', 11, 11),
+      { type: 'spacer' },
+      balanceValue(meter, color, 31),
+      { type: 'spacer' },
+      {
+        type: 'stack', direction: 'row',
+        children: [{ type: 'spacer' }, text(formatTime(meter.dataAt), 9, meter.stale ? C.warn : C.dim, 'medium')]
       }
     ]
   };
+}
+
+function mediumHomeWidget(data, ctx) {
+  const meter = data.meter;
+  const color = statusColor(data);
+  return {
+    type: 'widget', ...rootBackground(ctx), padding: [17, 19],
+    refreshAfter: refreshAfter(ctx),
+    children: [{
+      type: 'stack', direction: 'row', gap: 13,
+      children: [
+        {
+          type: 'stack', width: 142, gap: 7,
+          children: [
+            titleRow(meter.name, '#FFBE3F', 11, 12),
+            { type: 'spacer' },
+            balanceValue(meter, color, 31),
+            { type: 'spacer' },
+            text(formatTime(meter.dataAt), 9, meter.stale ? C.warn : C.dim, 'medium')
+          ]
+        },
+        { type: 'stack', width: 1, backgroundColor: C.line, borderRadius: 1 },
+        mediumUsageChart(data)
+      ]
+    }]
+  };
+}
+
+function largeHomeWidget(data, ctx, extraLarge = false) {
+  const meter = data.meter;
+  const color = statusColor(data);
+  return {
+    type: 'widget', ...rootBackground(ctx), padding: extraLarge ? [23, 28] : [22, 24], gap: 7,
+    refreshAfter: refreshAfter(ctx),
+    children: [
+      titleRow(meter.name, '#FFBE3F', extraLarge ? 15 : 13, extraLarge ? 15 : 13),
+      { type: 'spacer', length: 6 },
+      balanceValue(meter, color, extraLarge ? 51 : 43),
+      {
+        type: 'stack', direction: 'row',
+        children: [text(formatTime(meter.dataAt), 10, meter.stale ? C.warn : C.dim, 'medium'), { type: 'spacer' }]
+      },
+      { type: 'spacer', length: 12 },
+      { type: 'stack', height: 1, backgroundColor: C.line },
+      { type: 'spacer', length: 8 },
+      text('近 7 日用电 / 度', 11, C.dim, 'bold'),
+      sevenDayUsageChart(data, extraLarge)
+    ]
+  };
+}
+
+function homeWidget(data, ctx, family) {
+  if (!data.meter) return emptyWidget(data, ctx, family);
+  if (family === 'systemSmall') return smallHomeWidget(data, ctx);
+  if (family === 'systemLarge') return largeHomeWidget(data, ctx, false);
+  if (family === 'systemExtraLarge') return largeHomeWidget(data, ctx, true);
+  return mediumHomeWidget(data, ctx);
 }
 
 function accessoryWidget(data, family) {
@@ -458,8 +638,9 @@ function accessoryWidget(data, family) {
 }
 
 export default async function(ctx) {
-  const data = await loadData(ctx);
   const family = ctx.widgetFamily || 'systemMedium';
+  const includeUsage = ['systemMedium', 'systemLarge', 'systemExtraLarge'].includes(family);
+  const data = await loadData(ctx, includeUsage);
   if (family.startsWith('accessory')) return accessoryWidget(data, family);
   return homeWidget(data, ctx, family);
 }

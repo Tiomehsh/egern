@@ -1,5 +1,5 @@
 name: "电量监控"
-description: "刷新时主动抄表，简洁显示图标标题、当前电量和数据时间"
+description: "主动抄表显示当前电量；中号展示近 3 日、大号展示近 7 日用电柱状图"
 author: "Tiomehsh"
 
 scriptings:
