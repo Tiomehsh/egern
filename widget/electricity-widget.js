@@ -390,6 +390,17 @@ function formatTime(timestamp, compact = false) {
   return compact ? `${hour}:${minute}` : `${month}-${day} ${hour}:${minute}`;
 }
 
+function headerRow(meter, stale, titleSize, iconSize, timeSize = 9) {
+  return {
+    type: 'stack', direction: 'row', alignItems: 'center', gap: 6,
+    children: [
+      titleRow(meter.name, '#FFBE3F', titleSize, iconSize),
+      { type: 'spacer' },
+      text(formatTime(meter.dataAt), timeSize, stale ? C.warn : C.dim, 'medium', { minScale: 0.7 })
+    ]
+  };
+}
+
 function usageValue(value) {
   return Number.isFinite(value) ? value.toFixed(2) : '--';
 }
@@ -429,17 +440,20 @@ function emptyWidget(data, ctx, family) {
     gap: 8,
     refreshAfter: refreshAfter(ctx),
     children: [
-      titleRow(data.name || '电量监控', '#FF626A', compact ? 11 : 12, compact ? 11 : 13),
+      {
+        type: 'stack', direction: 'row', alignItems: 'center',
+        children: [
+          titleRow(data.name || '电量监控', '#FF626A', compact ? 11 : 12, compact ? 11 : 13),
+          { type: 'spacer' },
+          text('--', compact ? 9 : 10, C.dim, 'medium')
+        ]
+      },
       { type: 'spacer' },
       text('--', compact ? 32 : 40, C.fail, 'bold', {
         font: { size: compact ? 32 : 40, weight: 'bold', family: 'Menlo' }
       }),
       text(data.error || '读取失败', 10, C.dim, 'medium', { maxLines: 2, minScale: 0.65 }),
-      { type: 'spacer' },
-      {
-        type: 'stack', direction: 'row',
-        children: [{ type: 'spacer' }, text('时间 --', 10, C.dim, 'medium')]
-      }
+      { type: 'spacer' }
     ]
   };
 }
@@ -468,7 +482,7 @@ function usageBarRow(label, item, maxValue) {
         children: ratio > 0 ? [
           {
             type: 'stack', width: Math.max(3, 42 * ratio), height: 6,
-            backgroundColor: C.text, borderRadius: 3
+            backgroundColor: C.ok, borderRadius: 3
           },
           { type: 'spacer' }
         ] : []
@@ -512,8 +526,8 @@ function sevenDayUsageChart(data, extraLarge = false) {
           text(usageValue(item?.value), extraLarge ? 10 : 8, C.text, 'semibold', { textAlign: 'center', minScale: 0.55 }),
           {
             type: 'stack', width: extraLarge ? 21 : 16, height: barHeight,
-            backgroundColor: C.text,
-            opacity: Number.isFinite(item?.value) ? 0.92 : 0,
+            backgroundColor: C.ok,
+            opacity: Number.isFinite(item?.value) ? 1 : 0,
             borderRadius: 4
           },
           text(item ? usageDateLabel(item.timestamp) : '--', extraLarge ? 9 : 8, C.dim, 'medium', { textAlign: 'center', minScale: 0.65 })
@@ -530,14 +544,10 @@ function smallHomeWidget(data, ctx) {
     type: 'widget', ...rootBackground(ctx), padding: [16, 17], gap: 7,
     refreshAfter: refreshAfter(ctx),
     children: [
-      titleRow(meter.name, '#FFBE3F', 11, 11),
+      headerRow(meter, meter.stale, 11, 11, 9),
       { type: 'spacer' },
       balanceValue(meter, color, 31),
-      { type: 'spacer' },
-      {
-        type: 'stack', direction: 'row',
-        children: [{ type: 'spacer' }, text(formatTime(meter.dataAt), 9, meter.stale ? C.warn : C.dim, 'medium')]
-      }
+      { type: 'spacer' }
     ]
   };
 }
@@ -546,25 +556,26 @@ function mediumHomeWidget(data, ctx) {
   const meter = data.meter;
   const color = statusColor(data);
   return {
-    type: 'widget', ...rootBackground(ctx), padding: [17, 19],
+    type: 'widget', ...rootBackground(ctx), padding: [17, 19], gap: 8,
     refreshAfter: refreshAfter(ctx),
-    children: [{
-      type: 'stack', direction: 'row', gap: 13,
-      children: [
-        {
-          type: 'stack', direction: 'column', width: 142, gap: 7,
-          children: [
-            titleRow(meter.name, '#FFBE3F', 11, 12),
-            { type: 'spacer' },
-            balanceValue(meter, color, 31),
-            { type: 'spacer' },
-            text(formatTime(meter.dataAt), 9, meter.stale ? C.warn : C.dim, 'medium')
-          ]
-        },
-        { type: 'stack', width: 1, backgroundColor: C.line, borderRadius: 1 },
-        mediumUsageChart(data)
-      ]
-    }]
+    children: [
+      headerRow(meter, meter.stale, 11, 12, 9),
+      {
+        type: 'stack', direction: 'row', flex: 1, gap: 13,
+        children: [
+          {
+            type: 'stack', direction: 'column', width: 142,
+            children: [
+              { type: 'spacer' },
+              balanceValue(meter, color, 31),
+              { type: 'spacer' }
+            ]
+          },
+          { type: 'stack', width: 1, backgroundColor: C.line, borderRadius: 1 },
+          mediumUsageChart(data)
+        ]
+      }
+    ]
   };
 }
 
@@ -575,13 +586,9 @@ function largeHomeWidget(data, ctx, extraLarge = false) {
     type: 'widget', ...rootBackground(ctx), padding: extraLarge ? [23, 28] : [22, 24], gap: 7,
     refreshAfter: refreshAfter(ctx),
     children: [
-      titleRow(meter.name, '#FFBE3F', extraLarge ? 15 : 13, extraLarge ? 15 : 13),
+      headerRow(meter, meter.stale, extraLarge ? 15 : 13, extraLarge ? 15 : 13, 10),
       { type: 'spacer', length: 6 },
       balanceValue(meter, color, extraLarge ? 51 : 43),
-      {
-        type: 'stack', direction: 'row',
-        children: [text(formatTime(meter.dataAt), 10, meter.stale ? C.warn : C.dim, 'medium'), { type: 'spacer' }]
-      },
       { type: 'spacer', length: 12 },
       { type: 'stack', height: 1, backgroundColor: C.line },
       { type: 'spacer', length: 8 },
