@@ -28,7 +28,6 @@ const C = {
   ok:    { light: '#2F9E58', dark: '#76E39A' },
   warn:  { light: '#A06400', dark: '#FFBE3F' },
   fail:  { light: '#D64545', dark: '#FF626A' },
-  track: { light: '#ECEDEF', dark: '#252529' },
   line:  { light: '#E1E2E5', dark: '#303035' }
 };
 
@@ -465,11 +464,14 @@ function usageBarRow(label, item, maxValue) {
     children: [
       text(label, 9, C.dim, 'medium', { width: 27 }),
       {
-        type: 'stack', width: 42, height: 6, backgroundColor: C.track, borderRadius: 3,
-        children: ratio > 0 ? [{
-          type: 'stack', width: Math.max(3, 42 * ratio), height: 6,
-          backgroundColor: C.ok, borderRadius: 3
-        }] : []
+        type: 'stack', width: 42, height: 6,
+        children: ratio > 0 ? [
+          {
+            type: 'stack', width: Math.max(3, 42 * ratio), height: 6,
+            backgroundColor: C.text, borderRadius: 3
+          },
+          { type: 'spacer' }
+        ] : []
       },
       { type: 'spacer' },
       text(usageValue(item?.value), 9, C.text, 'semibold', { width: 35, textAlign: 'right', minScale: 0.7 })
@@ -510,7 +512,8 @@ function sevenDayUsageChart(data, extraLarge = false) {
           text(usageValue(item?.value), extraLarge ? 10 : 8, C.text, 'semibold', { textAlign: 'center', minScale: 0.55 }),
           {
             type: 'stack', width: extraLarge ? 21 : 16, height: barHeight,
-            backgroundColor: Number.isFinite(item?.value) ? C.ok : C.track,
+            backgroundColor: C.text,
+            opacity: Number.isFinite(item?.value) ? 0.92 : 0,
             borderRadius: 4
           },
           text(item ? usageDateLabel(item.timestamp) : '--', extraLarge ? 9 : 8, C.dim, 'medium', { textAlign: 'center', minScale: 0.65 })
