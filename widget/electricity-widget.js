@@ -483,7 +483,7 @@ function mediumUsageChart(data) {
   const maxValue = Math.max(1, ...items.map(item => Number.isFinite(item?.value) ? item.value : 0));
   const labels = ['今天', '昨天', '前天'];
   return {
-    type: 'stack', flex: 1, gap: 9,
+    type: 'stack', direction: 'column', flex: 1, gap: 9,
     children: [
       text('近三日用电 / 度', 10, C.dim, 'bold'),
       ...items.map((item, index) => usageBarRow(labels[index], item, maxValue))
@@ -504,7 +504,7 @@ function sevenDayUsageChart(data, extraLarge = false) {
       const ratio = Number.isFinite(item?.value) && maxValue > 0 ? item.value / maxValue : 0;
       const barHeight = ratio > 0 ? Math.max(3, maxBarHeight * ratio) : 2;
       return {
-        type: 'stack', flex: 1, alignItems: 'center', gap: 3,
+        type: 'stack', direction: 'column', flex: 1, alignItems: 'center', gap: 3,
         children: [
           { type: 'spacer' },
           text(usageValue(item?.value), extraLarge ? 10 : 8, C.text, 'semibold', { textAlign: 'center', minScale: 0.55 }),
@@ -549,7 +549,7 @@ function mediumHomeWidget(data, ctx) {
       type: 'stack', direction: 'row', gap: 13,
       children: [
         {
-          type: 'stack', width: 142, gap: 7,
+          type: 'stack', direction: 'column', width: 142, gap: 7,
           children: [
             titleRow(meter.name, '#FFBE3F', 11, 12),
             { type: 'spacer' },
