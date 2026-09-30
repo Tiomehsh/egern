@@ -68,7 +68,7 @@ https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/sub-widget.yaml
 - 🕒 标题固定在左上角，电表数据时间固定在右上角
 - 💾 电表或报表接口暂时失败时使用上次成功缓存
 - 🌗 支持玻璃透明和经典深浅色两种风格
-- 🔐 Token 只通过 Egern 环境变量保存，不写入公开脚本
+- 🔐 支持 YYB 获取微信登录 code，Token 缺失或失效时自动续期；密钥通过 Egern 环境变量配置，新 Token 保存在 Egern 本地存储
 
 ### 安装
 
@@ -80,7 +80,11 @@ https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/electricity-widget.
 
 **配置环境变量：**
 
-- `ELECTRICITY_API_TOKEN`：电表接口 Bearer Token，必填；可以只填 Token，也可以包含 `Bearer ` 前缀
+- `YYB_API_KEY`：YYB 账户设置中创建的 API Key；自动登录时必填
+- `YYB_ACCOUNT_REF`：YYB 已绑定微信账号的 ID、UIN 或 openid；自动登录时必填
+- `YYB_BASE_URL`：YYB 服务地址，默认 `https://yyb.tiome.me`
+- `ELECTRICITY_USER_ID`：可选，指定电表服务的 `userId`，用于核对自动登录的账号
+- `ELECTRICITY_API_TOKEN`：可选，电表接口 Bearer Token；可以只填 Token，也可以包含 `Bearer ` 前缀。不配置 YYB 时仍可使用此变量手工登录
 - `METER_ID`：指定电表 `measureId`，可选；留空时优先选择第一块在线电表
 - `METER_NO`：也可以按电表编号选择，可选
 - `METER_NAME`：覆盖小组件显示名称，可选
@@ -92,6 +96,12 @@ https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/electricity-widget.
 - `METER_READ_INTERVAL_MINUTES`：两次主动抄表的最短间隔，默认 `30`
 - `METER_READ_WAIT_SECONDS`：主动抄表后最多等待时间，默认 `12`
 - `METER_READ_POLL_SECONDS`：检查最新读数的间隔，默认 `2`
+
+自动登录需要先在 YYB 扫码绑定与电表相同的微信账号。配置 `YYB_API_KEY` 和 `YYB_ACCOUNT_REF` 后，可留空 `ELECTRICITY_API_TOKEN`。脚本缓存并复用 Token，在缺失或登录失效时调用 `/wxapp/getCode`，随后立即用 code 登录电表服务；每次小组件运行最多续期一次。电表服务对无效 Token 实测返回 `HTTP 200 / code 500 / 网络开小差了!!`，脚本也会对这个固定响应续期重试一次；此响应也可能来自服务故障。请求超时、HTTP 403 和其他普通业务错误不会触发续期。
+
+YYB 的 wxapp 调用会消耗额度，上游失败也计次。YYB 密钥或授权失效、额度耗尽、微信账号需要重新扫码时，仍需到 YYB 处理。不要把密钥或 Token 写入公开 YAML/JS 文件。模块脚本超时为 90 秒，为自动登录和抄表留出时间。
+
+本地检查：`node --test test/electricity-widget.test.cjs`。
 
 ---
 ## Sub2API 额度用量

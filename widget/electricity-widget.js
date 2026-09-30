@@ -5,9 +5,13 @@
  * Original work: https://github.com/pronounAI/Egern/blob/main/Subscription-Widget.js
  * Licensed under the Apache License, Version 2.0.
  *
- * Required env:
- *   ELECTRICITY_API_TOKEN=<Bearer token>
+ * Login env (choose one):
+ *   YYB_API_KEY=<YYB API Key>    自动获取 code 并续期 Token
+ *   YYB_ACCOUNT_REF=<账号 ID、UIN 或 openid>
+ *   ELECTRICITY_API_TOKEN=<Bearer token>  也可只用手工 Token
  * Optional env:
+ *   YYB_BASE_URL=https://yyb.tiome.me
+ *   ELECTRICITY_USER_ID=<电表服务 userId>  防止登录到其他账号
  *   METER_ID=<measureId>
  *   METER_NO=<measureNo>
  *   METER_NAME=电量监控
@@ -36,6 +40,11 @@ const METER_READ_URL = 'https://bb2.minyie.cn/ruoyi-bb/platform/device/sendMeter
 const METER_READ_RESULT_URL = 'https://bb2.minyie.cn/ruoyi-bb/platform/device/getReturnBySendMeterPakcet';
 const USAGE_REPORT_URL = 'https://bb2.minyie.cn/ruoyi-bb/platform/bar/consume/program/getConsEfficiencyByMonth';
 const BUSINESS_TYPE = '1001';
+const APP_ID = 'wxa663a58156eb05b2';
+const LOGIN_URL = 'https://bb2.minyie.cn/ruoyi-bb/platform/auth/user/login';
+const YYB_BASE_URL = 'https://yyb.tiome.me';
+
+class AuthenticationError extends Error {}
 
 function stringEnv(ctx, key, fallback = '') {
   const value = String(ctx.env?.[key] ?? '').trim();
@@ -114,9 +123,10 @@ function selectMeter(meters, meterId, meterNo) {
   return meters.find(meter => String(meter?.onlineStatus || '').trim() === '在线') || meters[0];
 }
 
-async function parseResponse(response, allowedCodes = [0]) {
+async function parseResponse(response, allowedCodes = [0], meterRequest = false) {
   if (!response) throw new Error('没有收到服务器响应');
   const status = Number(response.status ?? 200);
+  if (status === 401) throw new AuthenticationError('登录已失效');
   let payload;
   try {
     payload = await response.json();
@@ -128,7 +138,15 @@ async function parseResponse(response, allowedCodes = [0]) {
     }
   }
 
-  if (status === 401 || status === 403) throw new Error('Token 已失效，请重新抓取');
+  const message = String(payload?.msg || payload?.message || `接口错误 code=${payload?.code}`);
+  const expiredMessage = /登录失效|登录已过期|登录过期|未登录|请重新登录|token\s*(已过期|失效|expired|invalid)/i.test(message);
+  // 电表服务对无效 JWT 实测返回 HTTP 200 / code 500 / 此固定提示。
+  // 该提示也可能由服务故障引起；每次运行最多登录一次，避免循环消耗 YYB 额度。
+  const ambiguousLoginFailure = meterRequest && status === 200 && payload?.code === 500 && message === '网络开小差了!!';
+  if (String(payload?.code) === '401' || String(payload?.status) === '401' || ambiguousLoginFailure ||
+      (!allowedCodes.includes(payload?.code) && expiredMessage)) {
+    throw new AuthenticationError('登录已失效');
+  }
   if (status < 200 || status >= 300) throw new Error(payload?.msg || payload?.message || `HTTP ${status}`);
   if (!allowedCodes.includes(payload?.code)) {
     throw new Error(payload?.msg || payload?.message || `接口错误 code=${payload?.code}`);
@@ -141,18 +159,96 @@ function apiHeaders(token) {
     Authorization: `Bearer ${token}`,
     Accept: 'application/json',
     'Content-Type': 'application/json',
-    'User-Agent': 'Egern-Electricity-Widget/1.1',
-    Referer: 'https://servicewechat.com/wxa663a58156eb05b2/500/page-frame.html'
+    'User-Agent': 'Egern-Electricity-Widget/1.2',
+    Referer: `https://servicewechat.com/${APP_ID}/500/page-frame.html`
   };
 }
 
-async function postJson(ctx, url, token, body, allowedCodes = [0]) {
-  const response = await ctx.http.post(url, {
-    timeout: 10000,
-    headers: apiHeaders(token),
-    body
+function loginSession(ctx) {
+  const yybKey = stringEnv(ctx, 'YYB_API_KEY');
+  const ref = stringEnv(ctx, 'YYB_ACCOUNT_REF');
+  const yybBase = stringEnv(ctx, 'YYB_BASE_URL', YYB_BASE_URL).replace(/\/+$/, '');
+  const userId = stringEnv(ctx, 'ELECTRICITY_USER_ID');
+  const initialToken = normalizeToken(ctx.env?.ELECTRICITY_API_TOKEN || ctx.env?.BB_TOKEN);
+  const identity = JSON.stringify([yybBase, ref, userId, APP_ID, initialToken]);
+  const key = `egern.electricity.auth.v1.${hashString(identity)}`;
+  const cached = yybKey ? ctx.storage?.getJSON(key) : null;
+  return {
+    ctx, yybKey, ref, yybBase, userId, key, identity,
+    token: normalizeToken(cached?.identity === identity ? cached?.token : initialToken),
+    refreshAttempted: false,
+    refreshPromise: null
+  };
+}
+
+async function refreshLogin(session) {
+  if (session.refreshPromise) return session.refreshPromise;
+  if (!session.yybKey || !session.ref) {
+    throw new Error('请配置 YYB_API_KEY 和 YYB_ACCOUNT_REF，或更新 ELECTRICITY_API_TOKEN');
+  }
+  if (session.refreshAttempted) throw new Error('自动登录后仍然失效，请检查 YYB 微信账号状态');
+  if (!/^https:\/\/[^/?#]+(?:\/[^?#]*)?$/.test(session.yybBase)) throw new Error('YYB_BASE_URL 必须是 HTTPS 地址');
+  session.refreshAttempted = true;
+  session.refreshPromise = (async () => {
+    const response = await session.ctx.http.post(`${session.yybBase}/wxapp/getCode`, {
+      timeout: 20000,
+      headers: {
+        Authorization: `Bearer ${session.yybKey}`,
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: { ref: session.ref, app_id: APP_ID }
+    });
+    const payload = await parseResponse(response);
+    const code = payload?.data?.result?.code;
+    if (typeof code !== 'string' || !code.trim()) throw new Error('YYB 未返回 code，请检查微信账号状态');
+    const loginResponse = await session.ctx.http.post(LOGIN_URL, {
+      timeout: 10000,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Referer: apiHeaders('').Referer
+      },
+      body: { code, nickName: 'BB-微信用户', xcxAppId: APP_ID }
+    });
+    const login = await parseResponse(loginResponse);
+    if (session.userId && String(login?.data?.userId) !== session.userId) {
+      throw new Error('微信账号与 ELECTRICITY_USER_ID 不匹配，请检查 YYB_ACCOUNT_REF');
+    }
+    const token = login?.data?.access_token;
+    if (typeof token !== 'string' || !token.trim()) throw new Error('电表服务未返回 access_token');
+    session.token = normalizeToken(token);
+    return session.token;
+  })();
+  try {
+    return await session.refreshPromise;
+  } finally {
+    session.refreshPromise = null;
+  }
+}
+
+function saveLogin(session) {
+  session.ctx.storage?.setJSON(session.key, {
+    identity: session.identity, token: session.token, updatedAt: Date.now()
   });
-  return parseResponse(response, allowedCodes);
+}
+
+async function postJson(ctx, url, token, body, allowedCodes = [0]) {
+  const session = typeof token === 'object' ? token : null;
+  if (session && !session.token) await refreshLogin(session);
+  const requestToken = session ? session.token : token;
+  const request = async credential => parseResponse(await ctx.http.post(url, {
+    timeout: 10000,
+    headers: apiHeaders(credential),
+    body
+  }), allowedCodes, true);
+  try {
+    return await request(requestToken);
+  } catch (error) {
+    if (!(error instanceof AuthenticationError) || !session) throw error;
+    if (session.token === requestToken) await refreshLogin(session);
+    return request(session.token);
+  }
 }
 
 async function fetchMeter(ctx, apiUrl, token, meterId, meterNo) {
@@ -290,20 +386,23 @@ function normalizeMeter(ctx, meter) {
 }
 
 async function loadData(ctx, includeUsage = false) {
-  const token = normalizeToken(ctx.env?.ELECTRICITY_API_TOKEN || ctx.env?.BB_TOKEN);
+  const token = loginSession(ctx);
   const meterId = stringEnv(ctx, 'METER_ID');
   const meterNo = stringEnv(ctx, 'METER_NO');
   const apiUrl = stringEnv(ctx, 'ELECTRICITY_API_URL', API_URL);
   const defaultName = stringEnv(ctx, 'METER_NAME', '电量监控');
-  if (!token) return { mode: 'setup', name: defaultName, error: '请配置 ELECTRICITY_API_TOKEN' };
+  if (!token.token && !(token.yybKey && token.ref)) {
+    return { mode: 'setup', name: defaultName, error: '请配置 YYB_API_KEY 和 YYB_ACCOUNT_REF，或 ELECTRICITY_API_TOKEN' };
+  }
 
   const selector = meterId || meterNo || 'first-online';
-  const key = storageKey(apiUrl, selector);
+  const key = storageKey(apiUrl, token.yybKey ? `${selector}|${token.ref}|${token.userId}|${token.yybBase}` : selector);
   const readKey = `${key}.active-read`;
   const cached = ctx.storage?.getJSON(key);
 
   try {
     let rawMeter = await fetchMeter(ctx, apiUrl, token, meterId, meterNo);
+    if (token.yybKey) saveLogin(token);
     const usagePromise = includeUsage
       ? fetchRecentUsage(ctx, token, rawMeter, 7).catch(() => cached?.usage || [])
       : Promise.resolve(cached?.usage || []);
@@ -337,6 +436,7 @@ async function loadData(ctx, includeUsage = false) {
 
     const meter = normalizeMeter(ctx, rawMeter);
     const usage = await usagePromise;
+    if (token.yybKey) saveLogin(token);
     const result = { mode: 'live', name: meter.name, meter, usage, updatedAt: Date.now() };
     ctx.storage?.setJSON(key, result);
     return result;
