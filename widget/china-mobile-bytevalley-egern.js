@@ -841,7 +841,7 @@ async function loadData(ctx) {
   }
 }
 
-/* ==================== 渲染层：移植 ByteValley 四卡圆环样式 ==================== */
+/* ==================== 渲染层：小号三卡布局 + Hark iOS 中大号布局 ==================== */
 const C_FEE = { light: '#0080CB', dark: '#66ADFF' };
 const C_FLOW = { light: '#32CD32', dark: '#63E08F' };
 const C_OTHER = { light: '#8A6EFF', dark: '#C59BFF' };
@@ -1038,189 +1038,365 @@ function buildSmall(title, ds, fromCache, ctx) {
     backgroundColor: SURFACE, refreshAfter: refreshAfter(),
     children: [
       { type: 'spacer' },
-      centeredSmallCard(smallInfoCard('剩余话费', ds.fee.number, '元', C_FEE, '', true)),
+      centeredSmallCard(smallInfoCard('剩余话费', ds.fee.number, '元', harkIOS.colors.fee, '', true)),
       { type: 'spacer', length: 9 },
-      centeredSmallCard(smallInfoCard(flow.title === '已用流量' ? '已用流量' : '通用流量', flow.number, flow.unit || '', C_FLOW, 'antenna.radiowaves.left.and.right', false)),
+      centeredSmallCard(smallInfoCard(flow.title === '已用流量' ? '已用流量' : '通用流量', flow.number, flow.unit || '', harkIOS.colors.flow, 'antenna.radiowaves.left.and.right', false)),
       { type: 'spacer', length: 9 },
-      centeredSmallCard(smallInfoCard('剩余语音', voice.number, voice.unit || '分钟', C_VOICE, 'phone.badge.waveform.fill', false)),
+      centeredSmallCard(smallInfoCard('剩余语音', voice.number, voice.unit || '分钟', harkIOS.colors.voice, 'phone.badge.waveform.fill', false)),
       { type: 'spacer' },
     ],
   };
 }
 
-function mediumHistorySvg(values, width = 80, height = 34) {
-  const days = Array.isArray(values) ? values.slice(-7) : [];
-  while (days.length < 7) days.unshift(null);
-  const max = Math.max(1, ...days.map(v => Number(v) || 0));
-  const gap = width < 100 ? 4 : 8;
-  const barWidth = (width - gap * 6) / 7;
-  const bars = days.map((v, i) => {
-    const amount = Number(v) || 0;
-    const h = amount > 0 ? Math.max(4, (height - 3) * amount / max) : 3;
-    const opacity = v == null ? '.24' : i === 6 ? '1' : '.54';
-    return `<rect x='${(i * (barWidth + gap)).toFixed(1)}' y='${(height - h).toFixed(1)}' width='${barWidth.toFixed(1)}' height='${h.toFixed(1)}' rx='3' fill='#397FB5' fill-opacity='${opacity}'/>`;
-  }).join('');
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${width} ${height}'>${bars}</svg>`;
-  return 'data:image/svg+xml,' + encodeURIComponent(svg);
-}
+// Medium and large layouts are copied from Hark's iOS renderer.
+// Source: https://github.com/zhaohantao1360-hash/Hark/blob/main/china-mobile-hark-ios.js
+// Keep its helpers scoped so the three-card small layout can coexist with it.
+const harkIOS = (() => {
+const C_FEE = '#FF9F0A';
+const C_FLOW = '#0A84FF';
+const C_OTHER = '#64D2FF';
+const C_VOICE = '#30D158';
+const WARN = '#FF453A';
+const TXT = { light: '#000000', dark: '#FFFFFF' };
+const SUB = { light: '#3C3C4399', dark: '#EBEBF599' };
+const GLASS = { light: '#FFFFFFA6', dark: '#FFFFFF1A' };
 
-function mediumMetric(label, d, color, valueSize) {
-  const data = d || { number: '--', unit: '' };
+function bg() {
   return {
-    type: 'stack', direction: 'column', alignItems: 'center',
-    width: (DASHBOARD_WIDTH - 16) / 3, height: 50, gap: 2,
-    children: [
-      { type: 'spacer' },
-      textNode(label, 9, 'medium', SUB, { textAlign: 'center' }),
-      {
-        type: 'stack', direction: 'row', alignItems: 'end',
-        width: (DASHBOARD_WIDTH - 16) / 3, gap: 3,
-        children: [
-          { type: 'spacer' },
-          textNode(data.number, valueSize, 'bold', color, { minScale: 0.42 }),
-          textNode(data.unit || '', 9, 'medium', SUB),
-          { type: 'spacer' },
-        ],
-      },
-      { type: 'spacer' },
-    ],
+    type: 'linear',
+    colors: [{ light: '#EAF3FF', dark: '#0B1A33' }, { light: '#F4F0FF', dark: '#120B24' }, { light: '#E9FBF3', dark: '#03140F' }],
+    stops: [0, 0.55, 1],
+    startPoint: { x: 0, y: 0 },
+    endPoint: { x: 1, y: 1 },
   };
 }
 
-function mediumProgressSvg(value, width = 172) {
-  const p = Math.max(0, Math.min(1, Number(value) || 0));
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${width} 6'>` +
-    `<defs><clipPath id='track'><rect width='${width}' height='6' rx='3'/></clipPath></defs>` +
-    `<rect width='${width}' height='6' rx='3' fill='#397FB5' fill-opacity='.16'/>` +
-    `<rect x='0' width='${(width * p).toFixed(3)}' height='6' fill='#397FB5' clip-path='url(#track)'/></svg>`;
-  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+/* ---------- 用量洞察 ---------- */
+
+function toMB(d) {
+  const n = parseFloat(d && d.number);
+  if (!Number.isFinite(n)) return null;
+  return d.unit === 'GB' ? n * 1024 : n;
 }
 
-function mediumUpdateTime(ds, fromCache) {
-  if (!ds.updatedAt) return fromCache ? '缓存' : '更新 --:--';
-  const date = new Date(ds.updatedAt);
-  const time = `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
-  return `${fromCache ? '缓存 · ' : '更新 '}${time}`;
+function fmtMB(mb) {
+  if (mb == null || !Number.isFinite(mb)) return '--';
+  return mb >= 1024 ? `${(mb / 1024).toFixed(2)} GB` : `${mb.toFixed(0)} MB`;
 }
 
-// One shared grid keeps headers, metrics and charts on the same edges.
-const DASHBOARD_WIDTH = 278;
-
-function centeredDashboard(content) {
+function insights(ctx, ds) {
+  const now = new Date();
+  const dayKey = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+  const dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const daysLeft = dim - now.getDate() + 1;
+  // 按 通用 + 其他流量 合计剩余统计
+  const _g = toMB(ds.flow), _o = toMB(ds.otherFlow);
+  const flowMB = ctx.env.CM_SHOW_USED_FLOW === 'true' ? null
+    : (_g == null && _o == null ? null : (_g || 0) + (_o || 0));
+  let todayMB = null;
+  if (flowMB != null) {
+    let snap = null;
+    try { snap = ctx.storage.getJSON('cm_day_snap'); } catch (e) {}
+    // 新的一天，或流量变多（加油包/月初重置）→ 重新记起点
+    if (!snap || snap.date !== dayKey || flowMB > snap.start + 1) {
+      snap = { date: dayKey, start: flowMB };
+      try { ctx.storage.setJSON('cm_day_snap', snap); } catch (e) {}
+    }
+    todayMB = Math.max(0, snap.start - flowMB);
+  }
+  // 近 7 天每日用量历史（旧 → 今天）
+  const hist = [];
+  if (todayMB != null) {
+    let h = {};
+    try { h = ctx.storage.getJSON('cm_hist') || {}; } catch (e) {}
+    h[dayKey] = todayMB;
+    const keep = {};
+    for (let i = 7; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 86400000);
+      const k = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+      if (h[k] != null) keep[k] = h[k];
+      if (i <= 6) hist.push(h[k] == null ? null : h[k]);
+    }
+    try { ctx.storage.setJSON('cm_hist', keep); } catch (e) {}
+  }
+  // 按近 6 天（不含今天）平均用量预测
+  let forecast = { text: '用量统计中…', color: SUB };
+  if (flowMB != null) {
+    const past = hist.slice(0, 6).filter(v => v != null && v > 0);
+    const vals = past.length ? past : (todayMB > 0 ? [todayMB] : []);
+    if (vals.length) {
+      const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+      const days = Math.floor(flowMB / avg);
+      forecast = days >= daysLeft
+        ? { text: days > 999 ? '按近期速度 充足' : `预计够用 ${days} 天 ✓`, color: C_VOICE }
+        : { text: `约 ${days} 天用完 · 早于月底`, color: C_FEE };
+    }
+  }
   return {
-    type: 'stack', direction: 'row', alignItems: 'center',
-    children: [{ type: 'spacer' }, content, { type: 'spacer' }],
+    hist,
+    forecast,
+    daysLeft,
+    monthPct: (now.getDate() - 1 + now.getHours() / 24) / dim,
+    todayMB,
+    dailyMB: flowMB != null ? flowMB / daysLeft : null,
+    lowFee: (() => { const n = parseFloat(ds.fee.number); return Number.isFinite(n) && n < 10; })(),
   };
 }
 
-function dashboardSections(title, ds, fromCache, ctx) {
-  const rawPhone = getPhone(ctx);
-  const phone = /^\d{11}$/.test(rawPhone)
-    ? `${rawPhone.slice(0, 3)} **** ${rawPhone.slice(7)}` : '';
-  const flow = ds.flow || { number: '--', unit: '', percent: 0 };
-  const usedFlow = flow.title === '已用流量';
-  const flowRatio = usedFlow ? 1 - ratio(flow) : ratio(flow);
-  const other = ds.otherFlow || { number: '--', unit: '' };
+/* ---------- 图形 ---------- */
+
+// 三层同心圆环（外→内：通用流量、其他流量、语音）
+function ringsSvg(values, size, stroke, gap) {
+  const h = size / 2;
+  let body = '';
+  values.forEach((v, i) => {
+    const r = h - stroke / 2 - i * (stroke + gap);
+    if (r <= stroke / 2) return;
+    const c = 2 * Math.PI * r;
+    const p = Math.max(0, Math.min(1, Number(v.pct) || 0));
+    body += `<circle cx='${h}' cy='${h}' r='${r.toFixed(2)}' fill='none' stroke='${v.color}' stroke-opacity='0.22' stroke-width='${stroke}'/>`;
+    if (p > 0) {
+      // 用 path 圆弧绘制进度，不依赖 stroke-dasharray
+      if (p >= 0.999) {
+        body += `<circle cx='${h}' cy='${h}' r='${r.toFixed(2)}' fill='none' stroke='${v.color}' stroke-width='${stroke}'/>`;
+      } else {
+        const a = p * 2 * Math.PI;
+        const x = (h + r * Math.sin(a)).toFixed(2), y = (h - r * Math.cos(a)).toFixed(2);
+        body += `<path d='M ${h} ${(h - r).toFixed(2)} A ${r.toFixed(2)} ${r.toFixed(2)} 0 ${p > 0.5 ? 1 : 0} 1 ${x} ${y}' fill='none' stroke='${v.color}' stroke-width='${stroke}' stroke-linecap='round'/>`;
+      }
+    }
+  });
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${size} ${size}'>${body}</svg>`;
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
+
+function ringSvg(pct, size, stroke) {
+  return ringsSvg([{ pct, color: 'white' }], size, stroke, 0);
+}
+
+function barSvg(pct, color, w, h) {
+  const p = Math.max(0, Math.min(1, Number(pct) || 0));
+  const r = h / 2, fw = p > 0 ? Math.max(h, w * p) : 0;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${w} ${h}'>` +
+    `<rect width='${w}' height='${h}' rx='${r}' fill='${color}' fill-opacity='0.2'/>` +
+    (fw ? `<rect width='${fw.toFixed(1)}' height='${h}' rx='${r}' fill='${color}'/>` : '') + `</svg>`;
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
+
+function sparkSvg(values, color, w, h) {
+  const vals = values && values.length ? values : [null, null, null, null, null, null, null];
+  const n = vals.length, gap = 3, bw = (w - gap * (n - 1)) / n;
+  const max = Math.max(1, ...vals.map(v => v || 0));
+  let body = '';
+  vals.forEach((v, i) => {
+    const bh = v ? Math.max(2, (v / max) * h) : 2;
+    const op = v == null ? 0.15 : (i === n - 1 ? 1 : 0.55);
+    body += `<rect x='${(i * (bw + gap)).toFixed(1)}' y='${(h - bh).toFixed(1)}' width='${bw.toFixed(1)}' height='${bh.toFixed(1)}' rx='${Math.min(2, bw / 2).toFixed(1)}' fill='${color}' fill-opacity='${op}'/>`;
+  });
+  return 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${w} ${h}'>${body}</svg>`);
+}
+
+function ringValues(ds) {
+  const o = ds.otherFlow || {};
   return [
-    {
-      type: 'stack', direction: 'row', alignItems: 'center', width: DASHBOARD_WIDTH, gap: 5,
-      children: [
-        icon('antenna.radiowaves.left.and.right', C_FEE, 13),
-        textNode(title, 12, 'bold', TXT),
-        textNode(phone, 8, 'regular', SUB),
-        { type: 'spacer' },
-        textNode(mediumUpdateTime(ds, fromCache), 8, 'medium', SUB),
-      ],
-    },
-    {
-      type: 'stack', direction: 'row', alignItems: 'start', width: DASHBOARD_WIDTH, gap: 8,
-      children: [
-        mediumMetric('剩余话费', Object.assign({}, ds.fee, { unit: '元' }), C_FEE, 20),
-        mediumMetric(usedFlow ? '已用流量' : '通用流量', flow, C_FLOW, 20),
-        mediumMetric('剩余语音', ds.voice || { number: '--', unit: '分钟' }, C_VOICE, 20),
-      ],
-    },
-    {
-      type: 'stack', direction: 'column', alignItems: 'start', width: DASHBOARD_WIDTH, gap: 5,
-      children: [
-        {
-          type: 'stack', direction: 'row', alignItems: 'center', width: DASHBOARD_WIDTH,
-          children: [
-            textNode(usedFlow ? '通用流量已用' : '通用流量剩余', 9, 'medium', SUB),
-            { type: 'spacer' },
-            textNode(`${Math.round(flowRatio * 100)}%`, 9, 'medium', SUB),
-          ],
-        },
-        { type: 'image', src: mediumProgressSvg(flowRatio, DASHBOARD_WIDTH), width: DASHBOARD_WIDTH, height: 6 },
-      ],
-    },
-    textNode(`其他流量  ${other.number} ${other.unit || ''}`, 9, 'medium', SUB),
+    { pct: ds.flow.percent, color: C_FLOW },
+    { pct: o.percent, color: C_OTHER },
+    { pct: ds.voice.percent, color: C_VOICE },
   ];
 }
 
-function buildMedium(title, ds, fromCache, ctx) {
-  const ins = insights(ctx, ds);
-  const sections = dashboardSections(title, ds, fromCache, ctx);
-  const content = {
-    type: 'stack', direction: 'column', alignItems: 'start', width: DASHBOARD_WIDTH, gap: 11,
+/* ---------- 组件 ---------- */
+
+function t(text, size, weight, color, extra) {
+  return Object.assign({ type: 'text', text: String(text), font: { size, weight: weight || 'regular' }, textColor: color || TXT, maxLines: 1, minScale: 0.6 }, extra || {});
+}
+
+function header(title, ds, fromCache) {
+  return {
+    type: 'stack', direction: 'row', alignItems: 'center', gap: 4,
     children: [
-      ...sections.slice(0, 3),
+      { type: 'image', src: 'sf-symbol:antenna.radiowaves.left.and.right', width: 12, height: 12, color: C_FLOW },
+      t(title, 'footnote', 'semibold'),
+      { type: 'spacer' },
+      t(`${fromCache ? '缓存 · ' : ''}更新 ${ds && ds.updatedAt ? fmtTime(ds.updatedAt) : '--'}`, 'caption2', 'regular', SUB),
+    ],
+  };
+}
+
+function feeBig(ds, ins, size) {
+  const color = ins.lowFee ? WARN : TXT;
+  return {
+    type: 'stack', direction: 'column', alignItems: 'start', gap: 0,
+    children: [
+      t(ins.lowFee ? '话费不足' : '剩余话费', 'caption2', 'medium', ins.lowFee ? WARN : SUB),
       {
-        type: 'stack', direction: 'row', alignItems: 'center', width: DASHBOARD_WIDTH, gap: 5,
+        type: 'stack', direction: 'row', alignItems: 'end', gap: 1,
         children: [
-          { type: 'image', src: mediumHistorySvg(ins.hist, 36, 15), width: 36, height: 15 },
-          textNode('近7日用量', 8, 'medium', SUB),
-          { type: 'spacer' },
-          sections[3],
+          t('¥', 'subheadline', 'semibold', ins.lowFee ? WARN : SUB),
+          t(ds.fee.number, size || 28, 'bold', color),
         ],
       },
     ],
   };
+}
+
+function legendRow(icon, color, d, extra) {
+  const data = d || { title: '', number: '--', unit: '' };
   return {
-    type: 'widget', padding: [10, 12], gap: 0,
-    backgroundColor: SURFACE, refreshAfter: refreshAfter(),
-    children: [{ type: 'spacer' }, centeredDashboard(content), { type: 'spacer' }],
+    type: 'stack', direction: 'row', alignItems: 'center', gap: 5,
+    children: [
+      { type: 'image', src: `sf-symbol:${icon}`, width: 12, height: 12, color },
+      t(data.title, 'caption1', 'regular', SUB),
+      { type: 'spacer' },
+      t(data.number, 'subheadline', 'bold', TXT),
+      t(data.unit ? ` ${data.unit}` : '', 'caption2', 'regular', SUB),
+      ...(extra ? [t(`  ${extra}`, 'caption2', 'semibold', color)] : []),
+    ],
+  };
+}
+
+function alignedRow(icon, color, d, extra) {
+  const data = d || { title: '', number: '--', unit: '' };
+  const box = (w, child, right) => ({ type: 'stack', direction: 'row', alignItems: 'center', width: w, children: right ? [{ type: 'spacer' }, child] : [child, { type: 'spacer' }] });
+  return {
+    type: 'stack', direction: 'row', alignItems: 'center', gap: 4,
+    children: [
+      { type: 'image', src: `sf-symbol:${icon}`, width: 12, height: 12, color },
+      t(data.title, 'caption1', 'regular', SUB, { minScale: 0.8 }),
+      { type: 'spacer' },
+      box(48, t(data.number, 'subheadline', 'bold', TXT, { minScale: 0.7 }), true),
+      box(22, t(data.unit || '', 'caption2', 'regular', SUB, { minScale: 0.8 }), false),
+      box(30, t(extra || '', 'caption2', 'semibold', color, { minScale: 0.8 }), true),
+    ],
+  };
+}
+
+function pctText(d) { return d && d.percent > 0 ? `${Math.round(d.percent * 100)}%` : ''; }
+
+function chip(icon, color, text) {
+  return {
+    type: 'stack', direction: 'row', alignItems: 'center', gap: 4, padding: [5, 8], borderRadius: 99,
+    backgroundColor: GLASS,
+    children: [
+      { type: 'image', src: `sf-symbol:${icon}`, width: 11, height: 11, color },
+      t(text, 'caption2', 'semibold', TXT),
+    ],
+  };
+}
+
+function glass(children, extra) {
+  return Object.assign({ type: 'stack', direction: 'column', alignItems: 'start', gap: 6, padding: 12, borderRadius: 22, backgroundColor: GLASS, children }, extra || {});
+}
+
+/* ---------- 尺寸 ---------- */
+
+function buildMedium(title, ds, fromCache, ctx) {
+  const ins = insights(ctx, ds);
+  const other = ds.otherFlow || { title: '其他流量', number: '--', unit: '' };
+  return {
+    type: 'widget', padding: [12, 14], gap: 8, backgroundGradient: bg(),
+    refreshAfter: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+    children: [
+      header(title, ds, fromCache),
+      {
+        type: 'stack', direction: 'row', alignItems: 'center', gap: 12, flex: 1,
+        children: [
+          {
+            type: 'stack', direction: 'column', alignItems: 'center', gap: 4, width: 96,
+            children: [
+              { type: 'image', src: ringsSvg(ringValues(ds), 120, 13, 3), width: 70, height: 70 },
+              feeBig(ds, ins, 20),
+            ],
+          },
+          glass([
+            alignedRow('wifi', C_FLOW, ds.flow, pctText(ds.flow)),
+            alignedRow('globe.asia.australia.fill', C_OTHER, other, pctText(other)),
+            alignedRow('phone.fill', C_VOICE, ds.voice, pctText(ds.voice)),
+            {
+              type: 'stack', direction: 'row', alignItems: 'center', gap: 5,
+              children: [
+                { type: 'image', src: sparkSvg(ins.hist, C_FLOW, 70, 14), width: 34, height: 10 },
+                t(ins.todayMB != null ? `今日 ${fmtMB(ins.todayMB)}` : `本月剩 ${ins.daysLeft} 天`, 9, 'semibold', TXT, { minScale: 0.8 }),
+                { type: 'spacer' },
+                t(ins.forecast.text, 9, 'semibold', ins.forecast.color, { minScale: 0.8 }),
+              ],
+            },
+          ], { flex: 1, gap: 7, padding: [10, 12] }),
+        ],
+      },
+      ...(ds.planDebug ? [t(ds.planDebug, 'caption2', 'regular', SUB, { maxLines: 3 })] : []),
+    ],
   };
 }
 
 function buildLarge(title, ds, fromCache, ctx) {
   const ins = insights(ctx, ds);
-  const sections = dashboardSections(title, ds, fromCache, ctx);
-  const detail = (label, value) => panel([
-    textNode(label, 9, 'medium', SUB),
-    textNode(value, 14, 'semibold', TXT),
-  ], SMALL_ROW_BG, { flex: 1, height: 39, gap: 3, padding: 6, borderRadius: 10 });
-  const content = {
-    type: 'stack', direction: 'column', alignItems: 'start', width: DASHBOARD_WIDTH, gap: 14,
+  const other = ds.otherFlow || { title: '其他流量', number: '--', unit: '', percent: 0 };
+  const phone = getPhone(ctx);
+  const masked = /^\d{11}$/.test(phone) ? `${phone.slice(0, 3)} **** ${phone.slice(7)}` : '';
+  const meter = (icon, color, d) => glass([
+    {
+      type: 'stack', direction: 'row', alignItems: 'center', gap: 5,
+      children: [
+        { type: 'image', src: `sf-symbol:${icon}`, width: 13, height: 13, color },
+        t(d.title, 'caption1', 'regular', SUB),
+        { type: 'spacer' },
+        t(d.number, 17, 'bold', TXT),
+        t(d.unit ? ` ${d.unit}` : '', 'caption2', 'regular', SUB),
+        ...(pctText(d) ? [t(`  ${pctText(d)}`, 'caption1', 'semibold', color)] : []),
+      ],
+    },
+    { type: 'image', src: barSvg(d.percent, color, 300, 6), width: 296, height: 6 },
+  ], { gap: 6, padding: [8, 12], borderRadius: 16, height: 48 });
+  return {
+    type: 'widget', padding: [13, 15], gap: 7, backgroundGradient: bg(),
+    refreshAfter: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
     children: [
-      ...sections.slice(0, 3),
+      header(title, ds, fromCache),
       {
-        type: 'stack', direction: 'row', alignItems: 'center', width: DASHBOARD_WIDTH,
-        children: [textNode(ins.forecast, 9, 'medium', SUB), { type: 'spacer' }, sections[3]],
-      },
-      { type: 'stack', width: DASHBOARD_WIDTH, height: 1, backgroundColor: { light: '#E3E5E8', dark: '#3C3C3E' } },
-      {
-        type: 'stack', direction: 'column', alignItems: 'start', gap: 7,
+        type: 'stack', direction: 'row', alignItems: 'center', gap: 14, height: 80,
         children: [
-          textNode('近7日用量', 10, 'medium', SUB),
-          { type: 'image', src: mediumHistorySvg(ins.hist, DASHBOARD_WIDTH, 57), width: DASHBOARD_WIDTH, height: 57 },
+          { type: 'image', src: ringsSvg(ringValues(ds), 140, 15, 3), width: 78, height: 78 },
+          {
+            type: 'stack', direction: 'column', alignItems: 'start', gap: 3,
+            children: [
+              feeBig(ds, ins, 30),
+              ...(masked ? [t(masked, 'caption2', 'medium', SUB, { family: 'Menlo' })] : []),
+              t(`本月还剩 ${ins.daysLeft} 天${ins.dailyMB != null ? ` · 日均可用 ${fmtMB(ins.dailyMB)}` : ''}`, 'caption2', 'semibold', C_FLOW),
+            ],
+          },
+          { type: 'spacer' },
         ],
       },
-      {
-        type: 'stack', direction: 'row', alignItems: 'center', width: DASHBOARD_WIDTH, gap: 8,
-        children: [
-          detail('今日已用', fmtMB(ins.todayMB)),
-          detail('日均可用', fmtMB(ins.dailyMB)),
-          detail('本月剩余', `${ins.daysLeft} 天`),
-        ],
-      },
+      meter('wifi', C_FLOW, ds.flow),
+      meter('globe.asia.australia.fill', C_OTHER, other),
+      meter('phone.fill', C_VOICE, ds.voice),
+      glass([
+        {
+          type: 'stack', direction: 'row', alignItems: 'center', gap: 8,
+          children: [
+            { type: 'image', src: sparkSvg(ins.hist, C_FLOW, 140, 20), width: 120, height: 16 },
+            t(`今日 ${ins.todayMB != null ? fmtMB(ins.todayMB) : '--'}`, 'caption1', 'bold', TXT),
+            { type: 'spacer' },
+            t(ins.forecast.text, 'caption2', 'semibold', ins.forecast.color),
+          ],
+        },
+      ], { padding: [9, 12], borderRadius: 16, gap: 0, height: 36 }),
+      { type: 'spacer' },
+      ...(ds.planDebug ? [t(ds.planDebug, 'caption2', 'regular', SUB, { maxLines: 3 })] : []),
     ],
   };
-  return {
-    type: 'widget', padding: [12, 16], gap: 0,
-    backgroundColor: SURFACE, refreshAfter: refreshAfter(),
-    children: [{ type: 'spacer' }, centeredDashboard(content), { type: 'spacer' }],
-  };
+}
+
+  return { buildMedium, buildLarge, colors: { fee: C_FEE, flow: C_FLOW, voice: C_VOICE } };
+})();
+
+function buildMedium(title, ds, fromCache, ctx) {
+  return harkIOS.buildMedium(title, ds, fromCache, ctx);
+}
+
+function buildLarge(title, ds, fromCache, ctx) {
+  return harkIOS.buildLarge(title, ds, fromCache, ctx);
 }
 
 function buildLockScreen(title, ds, family, ctx) {
