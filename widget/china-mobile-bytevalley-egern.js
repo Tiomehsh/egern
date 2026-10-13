@@ -998,7 +998,7 @@ function smallInfoCard(label, value, unit, color, symbol, useLogo) {
   return {
     type: 'stack', direction: 'row', alignItems: 'center',
     width: 143, height: 40, padding: [5, 10], gap: 4,
-    borderRadius: 17, backgroundColor: SMALL_ROW_BG,
+    borderRadius: 17, backgroundColor: harkIOS.glassBackground,
     children: [
       {
         type: 'stack', direction: 'column', alignItems: 'start', gap: 1, flex: 1,
@@ -1035,7 +1035,7 @@ function buildSmall(title, ds, fromCache, ctx) {
   const voice = ds.voice || { number: '--', unit: '分钟' };
   return {
     type: 'widget', padding: [7, 8], gap: 0,
-    backgroundColor: SURFACE, refreshAfter: refreshAfter(),
+    backgroundGradient: harkIOS.backgroundGradient(), refreshAfter: refreshAfter(),
     children: [
       { type: 'spacer' },
       centeredSmallCard(smallInfoCard('剩余话费', ds.fee.number, '元', harkIOS.colors.fee, '', true)),
@@ -1388,7 +1388,7 @@ function buildLarge(title, ds, fromCache, ctx) {
   };
 }
 
-  return { buildMedium, buildLarge, colors: { fee: C_FEE, flow: C_FLOW, voice: C_VOICE } };
+  return { buildMedium, buildLarge, backgroundGradient: bg, glassBackground: GLASS, colors: { fee: C_FEE, flow: C_FLOW, voice: C_VOICE } };
 })();
 
 function buildMedium(title, ds, fromCache, ctx) {
