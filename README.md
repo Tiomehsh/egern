@@ -104,6 +104,24 @@ YYB 的 wxapp 调用会消耗额度，上游失败也计次。YYB 密钥或授�
 本地检查：`node --test test/electricity-widget.test.cjs`。
 
 ---
+## 中国移动四卡圆环
+
+基于 Hark 的中国移动查询脚本，参考 ByteValley 中国移动小组件的视觉样式。中号显示话费、通用流量、其他流量、语音四格圆环；小号显示话费与三项余量；大号增加今日用量、日均可用和用完预测。支持桌面和锁屏尺寸。
+
+### 安装
+
+在 Egern 中导入模块：
+
+```
+https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/china-mobile-bytevalley-egern.yaml
+```
+
+在模块 Env 填写 `CM_PHONENUMBER`（11 位移动手机号）。安装并信任 Egern 的 MITM 证书后，打开「中国移动」App，用短信验证码登录一次以捕获登录参数。随后在 Egern 小组件图库选择 `china-mobile-bytevalley-egern`。如果启用了原 Hark 仪表盘模块，先关闭原模块，避免重复处理登录请求。
+
+数据查询与保活逻辑来自 [zhaohantao1360-hash/Hark](https://github.com/zhaohantao1360-hash/Hark)，视觉参考 [ByteValley/NetTool](https://github.com/ByteValley/NetTool)。
+
+---
+
 ## Sub2API 额度用量
 
 在 Egern 小组件中显示 Sub2API 今日用量、本周用量和月度用量，数据来自 Sub2API active subscription 的日/周/月美元额度字段。

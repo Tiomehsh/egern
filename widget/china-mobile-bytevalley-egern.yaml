@@ -1,0 +1,62 @@
+name: "中国移动（ByteValley 风格 · Egern）"
+description: "桌面/锁屏小组件：ByteValley 四卡圆环样式。沿用原版登录抓取、查询、缓存与保活。先在「中国移动」App 用短信验证码登录一次自动捕获参数"
+author: "Tiomehsh（数据逻辑：zhaohantao1360-hash；视觉参考：ByteValley）"
+icon: "antenna.radiowaves.left.and.right"
+
+# 四处 script_url 均指向本仓库中的同一个脚本文件。
+env_schema:
+  CM_PHONENUMBER:
+    name: "移动手机号"
+    description: "11 位中国移动手机号"
+  CM_TITLE:
+    name: "小组件标题"
+    default_value: "中国移动"
+  CM_SHOW_USED_FLOW:
+    name: "显示已用流量"
+    options: ["true", "false"]
+
+# 需要解密中国移动 App 的 HTTPS 流量：Egern 设置里安装并信任 CA，
+# 再到 iOS「设置→通用→关于本机→证书信任设置」里打开信任
+mitm:
+  hostnames:
+    includes:
+      - client.app.coc.10086.cn
+      - 10086.online-cmcc.cn
+
+scriptings:
+  # 小组件脚本（generic）
+  - generic:
+      name: "china-mobile-bytevalley-egern"
+      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/china-mobile-bytevalley-egern.js"
+      update_interval: 3600
+      timeout: 20
+
+  # 会话保活：每 20 分钟后台查询一次，避免长时间不操作被移动注销登录
+  - schedule:
+      name: "中国移动保活-四卡圆环"
+      cron: "*/20 * * * *"
+      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/china-mobile-bytevalley-egern.js"
+      update_interval: 3600
+      timeout: 30
+      env:
+        CM_KEEPALIVE: "true"
+
+  # 登录参数捕获：在「中国移动」App 用短信验证码登录一次（建议关闭指纹/面容登录），看到通知即成功
+  - http_request:
+      name: "中国移动登录捕获-四卡圆环"
+      match: '^https?:\/\/(client\.app\.coc\.10086\.cn|10086\.online-cmcc\.cn)(:\d+)?\/'
+      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/china-mobile-bytevalley-egern.js"
+      update_interval: 3600
+      body_required: true
+      timeout: 10
+
+  # Cookie 刷新：从登录响应抓 Set-Cookie，保持会话有效
+  - http_response:
+      name: "中国移动Cookie捕获-四卡圆环"
+      match: '^https?:\/\/(client\.app\.coc\.10086\.cn|10086\.online-cmcc\.cn)(:\d+)?\/'
+      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/china-mobile-bytevalley-egern.js"
+      update_interval: 3600
+      timeout: 10
+
+widgets:
+  - name: "china-mobile-bytevalley-egern"
