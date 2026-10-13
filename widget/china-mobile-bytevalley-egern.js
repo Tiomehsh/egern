@@ -1067,16 +1067,22 @@ function mediumHistorySvg(values, width = 80, height = 34) {
 function mediumMetric(label, d, color, valueSize) {
   const data = d || { number: '--', unit: '' };
   return {
-    type: 'stack', direction: 'column', alignItems: 'start', flex: 1, gap: 2,
+    type: 'stack', direction: 'column', alignItems: 'center',
+    width: (DASHBOARD_WIDTH - 16) / 3, height: 50, gap: 2,
     children: [
-      textNode(label, 9, 'medium', SUB),
+      { type: 'spacer' },
+      textNode(label, 9, 'medium', SUB, { textAlign: 'center' }),
       {
-        type: 'stack', direction: 'row', alignItems: 'end', gap: 3,
+        type: 'stack', direction: 'row', alignItems: 'end',
+        width: (DASHBOARD_WIDTH - 16) / 3, gap: 3,
         children: [
+          { type: 'spacer' },
           textNode(data.number, valueSize, 'bold', color, { minScale: 0.42 }),
           textNode(data.unit || '', 9, 'medium', SUB),
+          { type: 'spacer' },
         ],
       },
+      { type: 'spacer' },
     ],
   };
 }
@@ -1130,8 +1136,8 @@ function dashboardSections(title, ds, fromCache, ctx) {
       type: 'stack', direction: 'row', alignItems: 'start', width: DASHBOARD_WIDTH, gap: 8,
       children: [
         mediumMetric('剩余话费', Object.assign({}, ds.fee, { unit: '元' }), C_FEE, 20),
-        mediumMetric(usedFlow ? '已用流量' : '通用流量', flow, TXT, 20),
-        mediumMetric('剩余语音', ds.voice || { number: '--', unit: '分钟' }, TXT, 20),
+        mediumMetric(usedFlow ? '已用流量' : '通用流量', flow, C_FLOW, 20),
+        mediumMetric('剩余语音', ds.voice || { number: '--', unit: '分钟' }, C_VOICE, 20),
       ],
     },
     {
