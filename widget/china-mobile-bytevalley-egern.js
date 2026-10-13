@@ -1027,12 +1027,16 @@ function buildSmall(title, ds, fromCache, ctx) {
   const flow = ds.flow || { number: '--', unit: '' };
   const voice = ds.voice || { number: '--', unit: '分钟' };
   return {
-    type: 'widget', padding: [7, 8], gap: 9,
+    type: 'widget', padding: [7, 8], gap: 0,
     backgroundColor: SURFACE, refreshAfter: refreshAfter(),
     children: [
+      { type: 'spacer' },
       smallInfoCard('剩余话费', ds.fee.number, '元', C_FEE, '', true),
+      { type: 'spacer', length: 9 },
       smallInfoCard(flow.title === '已用流量' ? '已用流量' : '通用流量', flow.number, flow.unit || '', C_FLOW, 'antenna.radiowaves.left.and.right', false),
+      { type: 'spacer', length: 9 },
       smallInfoCard('剩余语音', voice.number, voice.unit || '分钟', C_VOICE, 'phone.badge.waveform.fill', false),
+      { type: 'spacer' },
     ],
   };
 }
