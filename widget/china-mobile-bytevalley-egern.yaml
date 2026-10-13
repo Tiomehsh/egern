@@ -27,7 +27,7 @@ scriptings:
   # 小组件脚本（generic）
   - generic:
       name: "china-mobile-bytevalley-egern"
-      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/92a6a005f7a9de48eb39e701d49dfbf5a8ef02e7/widget/china-mobile-bytevalley-egern.js"
+      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/55d15b7c29b610577d430f9d9a19c99779af55da/widget/china-mobile-bytevalley-egern.js"
       update_interval: 3600
       timeout: 20
 
@@ -35,7 +35,7 @@ scriptings:
   - schedule:
       name: "中国移动保活-四卡圆环"
       cron: "*/20 * * * *"
-      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/92a6a005f7a9de48eb39e701d49dfbf5a8ef02e7/widget/china-mobile-bytevalley-egern.js"
+      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/55d15b7c29b610577d430f9d9a19c99779af55da/widget/china-mobile-bytevalley-egern.js"
       update_interval: 3600
       timeout: 30
       env:
@@ -45,7 +45,7 @@ scriptings:
   - http_request:
       name: "中国移动登录捕获-四卡圆环"
       match: '^https?:\/\/(client\.app\.coc\.10086\.cn|10086\.online-cmcc\.cn)(:\d+)?\/'
-      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/92a6a005f7a9de48eb39e701d49dfbf5a8ef02e7/widget/china-mobile-bytevalley-egern.js"
+      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/55d15b7c29b610577d430f9d9a19c99779af55da/widget/china-mobile-bytevalley-egern.js"
       update_interval: 3600
       body_required: true
       timeout: 10
@@ -54,7 +54,7 @@ scriptings:
   - http_response:
       name: "中国移动Cookie捕获-四卡圆环"
       match: '^https?:\/\/(client\.app\.coc\.10086\.cn|10086\.online-cmcc\.cn)(:\d+)?\/'
-      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/92a6a005f7a9de48eb39e701d49dfbf5a8ef02e7/widget/china-mobile-bytevalley-egern.js"
+      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/55d15b7c29b610577d430f9d9a19c99779af55da/widget/china-mobile-bytevalley-egern.js"
       update_interval: 3600
       timeout: 10
 
