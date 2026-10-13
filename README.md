@@ -106,7 +106,7 @@ YYB 的 wxapp 调用会消耗额度，上游失败也计次。YYB 密钥或授�
 ---
 ## 中国移动四卡圆环
 
-基于 Hark 的中国移动查询脚本。小号保留居中的三张横向信息卡，采用 Hark iOS 的橙色话费、蓝色流量和绿色语音配色；中号与大号直接移植 [Hark iOS 版](https://github.com/zhaohantao1360-hash/Hark/blob/main/china-mobile-hark-ios.js)的三层圆环、渐变背景和玻璃卡片布局。支持桌面和锁屏尺寸。
+基于 Hark 的中国移动查询脚本。小号保留居中的三张横向信息卡，采用 Hark iOS 的橙色话费、蓝色流量和绿色语音配色，以及与中大号一致的渐变背景和半透明卡片；中号与大号直接移植 [Hark iOS 版](https://github.com/zhaohantao1360-hash/Hark/blob/main/china-mobile-hark-ios.js)的三层圆环、渐变背景和玻璃卡片布局。支持桌面和锁屏尺寸。
 
 ### 安装
 
