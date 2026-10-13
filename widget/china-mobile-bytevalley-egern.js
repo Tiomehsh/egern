@@ -1058,7 +1058,7 @@ function mediumHistorySvg(values, width = 80, height = 34) {
     const amount = Number(v) || 0;
     const h = amount > 0 ? Math.max(4, (height - 3) * amount / max) : 3;
     const opacity = v == null ? '.24' : i === 6 ? '1' : '.54';
-    return `<rect x='${(i * (barWidth + gap)).toFixed(1)}' y='${(height - h).toFixed(1)}' width='${barWidth.toFixed(1)}' height='${h.toFixed(1)}' rx='3' fill='#42AFA4' fill-opacity='${opacity}'/>`;
+    return `<rect x='${(i * (barWidth + gap)).toFixed(1)}' y='${(height - h).toFixed(1)}' width='${barWidth.toFixed(1)}' height='${h.toFixed(1)}' rx='3' fill='#397FB5' fill-opacity='${opacity}'/>`;
   }).join('');
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${width} ${height}'>${bars}</svg>`;
   return 'data:image/svg+xml,' + encodeURIComponent(svg);
@@ -1079,6 +1079,15 @@ function mediumMetric(label, d, color, valueSize) {
       },
     ],
   };
+}
+
+function mediumProgressSvg(value, width = 172) {
+  const p = Math.max(0, Math.min(1, Number(value) || 0));
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${width} 6'>` +
+    `<defs><clipPath id='track'><rect width='${width}' height='6' rx='3'/></clipPath></defs>` +
+    `<rect width='${width}' height='6' rx='3' fill='#397FB5' fill-opacity='.16'/>` +
+    `<rect x='0' width='${(width * p).toFixed(3)}' height='6' fill='#397FB5' clip-path='url(#track)'/></svg>`;
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
 }
 
 function mediumUpdateTime(ds, fromCache) {
@@ -1107,7 +1116,7 @@ function buildMedium(title, ds, fromCache, ctx) {
       {
         type: 'stack', direction: 'row', alignItems: 'center', gap: 6,
         children: [
-          icon('antenna.radiowaves.left.and.right', C_FLOW, 15),
+          icon('antenna.radiowaves.left.and.right', C_FEE, 15),
           textNode(title, 13, 'bold', TXT),
           { type: 'spacer' },
           textNode(mediumUpdateTime(ds, fromCache), 9, 'medium', SUB),
@@ -1134,7 +1143,7 @@ function buildMedium(title, ds, fromCache, ctx) {
               {
                 type: 'stack', direction: 'row', alignItems: 'center', gap: 4,
                 children: [
-                  icon(lowFee ? 'exclamationmark.circle.fill' : 'checkmark.circle.fill', lowFee ? C_VOICE : C_FLOW, 10),
+                  icon(lowFee ? 'exclamationmark.circle.fill' : 'checkmark.circle.fill', lowFee ? C_VOICE : C_FEE, 10),
                   textNode(lowFee ? '话费不足' : '余额充足', 9, 'medium', SUB),
                 ],
               },
@@ -1147,8 +1156,8 @@ function buildMedium(title, ds, fromCache, ctx) {
               {
                 type: 'stack', direction: 'row', alignItems: 'start', gap: 5,
                 children: [
-                  mediumMetric(usedFlow ? '已用流量' : '通用流量', flow, C_FLOW, 19),
-                  mediumMetric('其他流量', ds.otherFlow, C_OTHER, 16),
+                  mediumMetric(usedFlow ? '已用流量' : '通用流量', flow, TXT, 19),
+                  mediumMetric('其他流量', ds.otherFlow, TXT, 16),
                 ],
               },
               {
@@ -1157,19 +1166,12 @@ function buildMedium(title, ds, fromCache, ctx) {
                   {
                     type: 'stack', direction: 'row', alignItems: 'center', width: progressWidth,
                     children: [
-                      textNode(usedFlow ? '本月已用' : '套餐余量', 9, 'medium', SUB),
+                      textNode(usedFlow ? '通用流量已用' : '通用流量余量', 9, 'medium', SUB),
                       { type: 'spacer' },
                       textNode(`${Math.round(flowRatio * 100)}%`, 9, 'medium', SUB),
                     ],
                   },
-                  {
-                    type: 'stack', direction: 'row', width: progressWidth, height: 6,
-                    backgroundColor: { light: '#E1EAE4', dark: '#26342B' }, borderRadius: 3,
-                    children: flowRatio > 0 ? [{
-                      type: 'stack', width: Math.max(4, progressWidth * flowRatio), height: 6,
-                      backgroundColor: C_FLOW, borderRadius: 3,
-                    }] : [],
-                  },
+                  { type: 'image', src: mediumProgressSvg(flowRatio, progressWidth), width: progressWidth, height: 6 },
                 ],
               },
               { type: 'spacer' },
@@ -1191,7 +1193,7 @@ function buildMedium(title, ds, fromCache, ctx) {
                       {
                         type: 'stack', direction: 'row', alignItems: 'end', gap: 2,
                         children: [
-                          textNode(voice.number, 19, 'bold', C_VOICE, { minScale: 0.45 }),
+                          textNode(voice.number, 19, 'bold', TXT, { minScale: 0.45 }),
                           textNode(voice.unit || '分钟', 9, 'medium', SUB),
                         ],
                       },
@@ -1217,7 +1219,7 @@ function buildLarge(title, ds, fromCache, ctx) {
   const detail = (label, value, color) => panel([
     textNode(label, 9, 'medium', SUB),
     textNode(value, 15, 'semibold', color),
-  ], FLOW_BG, { flex: 1, height: 37, gap: 1, padding: 5, borderRadius: 10 });
+  ], FEE_BG, { flex: 1, height: 37, gap: 1, padding: 5, borderRadius: 10 });
   return {
     type: 'widget', padding: [13, 16], gap: 8,
     backgroundColor: SURFACE, refreshAfter: refreshAfter(),
@@ -1230,15 +1232,15 @@ function buildLarge(title, ds, fromCache, ctx) {
         children: [
           textNode('近 7 日流量', 10, 'semibold', TXT),
           { type: 'spacer' },
-          textNode(ins.forecast, 9, 'medium', C_FLOW),
+          textNode(ins.forecast, 9, 'medium', SUB),
         ],
       },
       { type: 'image', src: mediumHistorySvg(ins.hist, 278, 57), width: 278, height: 57 },
       {
         type: 'stack', direction: 'row', alignItems: 'center', gap: 8,
         children: [
-          detail('今日已用', fmtMB(ins.todayMB), C_FLOW),
-          detail('日均可用', fmtMB(ins.dailyMB), C_OTHER),
+          detail('今日已用', fmtMB(ins.todayMB), C_FEE),
+          detail('日均可用', fmtMB(ins.dailyMB), C_FEE),
           detail('本月剩余', `${ins.daysLeft} 天`, C_FEE),
         ],
       },
