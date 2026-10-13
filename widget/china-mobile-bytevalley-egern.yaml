@@ -1,5 +1,5 @@
 name: "中国移动（ByteValley 风格 · Egern）"
-description: "桌面/锁屏小组件：ByteValley 四卡圆环样式。沿用原版登录抓取、查询、缓存与保活。先在「中国移动」App 用短信验证码登录一次自动捕获参数"
+description: "桌面/锁屏小组件：小号三条信息卡、中号四卡圆环。沿用原版登录抓取、查询、缓存与保活。先在「中国移动」App 用短信验证码登录一次自动捕获参数"
 author: "Tiomehsh（数据逻辑：zhaohantao1360-hash；视觉参考：ByteValley）"
 icon: "antenna.radiowaves.left.and.right"
 
