@@ -908,7 +908,7 @@ function insights(ctx, ds) {
       forecast = days >= daysLeft ? `预计够用 ${days} 天` : `约 ${days} 天用完`;
     }
   }
-  return { todayMB, dailyMB: flowMB == null ? null : flowMB / daysLeft, daysLeft, forecast };
+  return { hist, todayMB, dailyMB: flowMB == null ? null : flowMB / daysLeft, daysLeft, forecast };
 }
 
 function textNode(value, size, weight, color, extra) {
@@ -1020,6 +1020,13 @@ function smallInfoCard(label, value, unit, color, symbol, useLogo) {
   };
 }
 
+function centeredSmallCard(card) {
+  return {
+    type: 'stack', direction: 'row', alignItems: 'center',
+    children: [{ type: 'spacer' }, card, { type: 'spacer' }],
+  };
+}
+
 function buildSmall(title, ds, fromCache, ctx) {
   void title;
   void fromCache;
@@ -1031,47 +1038,210 @@ function buildSmall(title, ds, fromCache, ctx) {
     backgroundColor: SURFACE, refreshAfter: refreshAfter(),
     children: [
       { type: 'spacer' },
-      smallInfoCard('剩余话费', ds.fee.number, '元', C_FEE, '', true),
+      centeredSmallCard(smallInfoCard('剩余话费', ds.fee.number, '元', C_FEE, '', true)),
       { type: 'spacer', length: 9 },
-      smallInfoCard(flow.title === '已用流量' ? '已用流量' : '通用流量', flow.number, flow.unit || '', C_FLOW, 'antenna.radiowaves.left.and.right', false),
+      centeredSmallCard(smallInfoCard(flow.title === '已用流量' ? '已用流量' : '通用流量', flow.number, flow.unit || '', C_FLOW, 'antenna.radiowaves.left.and.right', false)),
       { type: 'spacer', length: 9 },
-      smallInfoCard('剩余语音', voice.number, voice.unit || '分钟', C_VOICE, 'phone.badge.waveform.fill', false),
+      centeredSmallCard(smallInfoCard('剩余语音', voice.number, voice.unit || '分钟', C_VOICE, 'phone.badge.waveform.fill', false)),
       { type: 'spacer' },
     ],
   };
 }
 
-function buildMedium(title, ds, fromCache, ctx) {
-  void ctx;
+function mediumHistorySvg(values, width = 80, height = 34) {
+  const days = Array.isArray(values) ? values.slice(-7) : [];
+  while (days.length < 7) days.unshift(null);
+  const max = Math.max(1, ...days.map(v => Number(v) || 0));
+  const gap = width < 100 ? 4 : 8;
+  const barWidth = (width - gap * 6) / 7;
+  const bars = days.map((v, i) => {
+    const amount = Number(v) || 0;
+    const h = amount > 0 ? Math.max(4, (height - 3) * amount / max) : 3;
+    const opacity = v == null ? '.24' : i === 6 ? '1' : '.54';
+    return `<rect x='${(i * (barWidth + gap)).toFixed(1)}' y='${(height - h).toFixed(1)}' width='${barWidth.toFixed(1)}' height='${h.toFixed(1)}' rx='3' fill='#42AFA4' fill-opacity='${opacity}'/>`;
+  }).join('');
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${width} ${height}'>${bars}</svg>`;
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
+
+function mediumMetric(label, d, color, valueSize) {
+  const data = d || { number: '--', unit: '' };
   return {
-    type: 'widget', padding: 10, gap: 9, backgroundColor: SURFACE, refreshAfter: refreshAfter(),
-    children: [header(title, ds, fromCache), cardRow(ds, false)],
+    type: 'stack', direction: 'column', alignItems: 'start', flex: 1, gap: 2,
+    children: [
+      textNode(label, 9, 'medium', SUB),
+      {
+        type: 'stack', direction: 'row', alignItems: 'end', gap: 3,
+        children: [
+          textNode(data.number, valueSize, 'bold', color, { minScale: 0.42 }),
+          textNode(data.unit || '', 9, 'medium', SUB),
+        ],
+      },
+    ],
+  };
+}
+
+function mediumUpdateTime(ds, fromCache) {
+  if (!ds.updatedAt) return fromCache ? '缓存' : '更新 --:--';
+  const date = new Date(ds.updatedAt);
+  const time = `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+  return `${fromCache ? '缓存 · ' : '更新 '}${time}`;
+}
+
+function buildMedium(title, ds, fromCache, ctx) {
+  const ins = insights(ctx, ds);
+  const rawPhone = getPhone(ctx);
+  const phone = /^\d{11}$/.test(rawPhone)
+    ? `${rawPhone.slice(0, 3)} **** ${rawPhone.slice(7)}` : '号码未设置';
+  const balance = parseFloat(ds.fee && ds.fee.number);
+  const lowFee = Number.isFinite(balance) && balance < 10;
+  const flow = ds.flow || { number: '--', unit: '', percent: 0 };
+  const usedFlow = flow.title === '已用流量';
+  const flowRatio = usedFlow ? 1 - ratio(flow) : ratio(flow);
+  const progressWidth = 172;
+  const voice = ds.voice || { number: '--', unit: '分钟' };
+  return {
+    type: 'widget', padding: [10, 12], gap: 7,
+    backgroundColor: SURFACE, refreshAfter: refreshAfter(),
+    children: [
+      {
+        type: 'stack', direction: 'row', alignItems: 'center', gap: 6,
+        children: [
+          icon('antenna.radiowaves.left.and.right', C_FLOW, 15),
+          textNode(title, 13, 'bold', TXT),
+          { type: 'spacer' },
+          textNode(mediumUpdateTime(ds, fromCache), 9, 'medium', SUB),
+        ],
+      },
+      {
+        type: 'stack', direction: 'row', alignItems: 'center', flex: 1, gap: 10,
+        children: [
+          {
+            type: 'stack', direction: 'column', alignItems: 'start', width: 108, height: 120,
+            children: [
+              textNode('当前号码', 9, 'medium', SUB),
+              textNode(phone, 11, 'semibold', TXT, { minScale: 0.6 }),
+              { type: 'spacer' },
+              textNode('剩余话费', 10, 'medium', SUB),
+              {
+                type: 'stack', direction: 'row', alignItems: 'end', gap: 3,
+                children: [
+                  textNode(ds.fee.number, 20, 'bold', C_FEE, { minScale: 0.5 }),
+                  textNode('元', 9, 'medium', SUB),
+                ],
+              },
+              { type: 'spacer' },
+              {
+                type: 'stack', direction: 'row', alignItems: 'center', gap: 4,
+                children: [
+                  icon(lowFee ? 'exclamationmark.circle.fill' : 'checkmark.circle.fill', lowFee ? C_VOICE : C_FLOW, 10),
+                  textNode(lowFee ? '话费不足' : '余额充足', 9, 'medium', SUB),
+                ],
+              },
+            ],
+          },
+          { type: 'stack', width: 1, height: 120, backgroundColor: { light: '#E3E5E8', dark: '#3C3C3E' } },
+          {
+            type: 'stack', direction: 'column', alignItems: 'start', flex: 1, height: 120, gap: 8,
+            children: [
+              {
+                type: 'stack', direction: 'row', alignItems: 'start', gap: 5,
+                children: [
+                  mediumMetric(usedFlow ? '已用流量' : '通用流量', flow, C_FLOW, 19),
+                  mediumMetric('其他流量', ds.otherFlow, C_OTHER, 16),
+                ],
+              },
+              {
+                type: 'stack', direction: 'column', alignItems: 'start', gap: 4,
+                children: [
+                  {
+                    type: 'stack', direction: 'row', alignItems: 'center', width: progressWidth,
+                    children: [
+                      textNode(usedFlow ? '本月已用' : '套餐余量', 9, 'medium', SUB),
+                      { type: 'spacer' },
+                      textNode(`${Math.round(flowRatio * 100)}%`, 9, 'medium', SUB),
+                    ],
+                  },
+                  {
+                    type: 'stack', direction: 'row', width: progressWidth, height: 6,
+                    backgroundColor: { light: '#E1EAE4', dark: '#26342B' }, borderRadius: 3,
+                    children: flowRatio > 0 ? [{
+                      type: 'stack', width: Math.max(4, progressWidth * flowRatio), height: 6,
+                      backgroundColor: C_FLOW, borderRadius: 3,
+                    }] : [],
+                  },
+                ],
+              },
+              { type: 'spacer' },
+              {
+                type: 'stack', direction: 'row', alignItems: 'end', gap: 6,
+                children: [
+                  {
+                    type: 'stack', direction: 'column', alignItems: 'start', gap: 2,
+                    children: [
+                      { type: 'image', src: mediumHistorySvg(ins.hist), width: 80, height: 34 },
+                      textNode('近 7 日用量', 8, 'medium', SUB),
+                    ],
+                  },
+                  { type: 'spacer' },
+                  {
+                    type: 'stack', direction: 'column', alignItems: 'end', gap: 2,
+                    children: [
+                      textNode('剩余语音', 9, 'medium', SUB),
+                      {
+                        type: 'stack', direction: 'row', alignItems: 'end', gap: 2,
+                        children: [
+                          textNode(voice.number, 19, 'bold', C_VOICE, { minScale: 0.45 }),
+                          textNode(voice.unit || '分钟', 9, 'medium', SUB),
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
   };
 }
 
 function buildLarge(title, ds, fromCache, ctx) {
+  const medium = buildMedium(title, ds, fromCache, ctx);
   const ins = insights(ctx, ds);
+  const mediumBody = Object.assign({}, medium.children[1], { height: 140 });
+  delete mediumBody.flex;
+  mediumBody.children = mediumBody.children.map(child =>
+    child.height === 120 ? Object.assign({}, child, { height: 140 }) : child);
   const detail = (label, value, color) => panel([
-    textNode(label, 11, 'medium', SUB),
-    textNode(value, 17, 'semibold', color),
-  ], FLOW_BG, { flex: 1, height: 62, gap: 4 });
+    textNode(label, 9, 'medium', SUB),
+    textNode(value, 15, 'semibold', color),
+  ], FLOW_BG, { flex: 1, height: 37, gap: 1, padding: 5, borderRadius: 10 });
   return {
-    type: 'widget', padding: 13, gap: 11, backgroundColor: SURFACE, refreshAfter: refreshAfter(),
+    type: 'widget', padding: [13, 16], gap: 8,
+    backgroundColor: SURFACE, refreshAfter: refreshAfter(),
     children: [
-      header(title, ds, fromCache),
-      cardRow(ds, false),
+      medium.children[0],
+      mediumBody,
+      { type: 'stack', height: 1, backgroundColor: { light: '#E3E5E8', dark: '#3C3C3E' } },
       {
         type: 'stack', direction: 'row', alignItems: 'center', gap: 7,
         children: [
-          detail('今日已用', fmtMB(ins.todayMB), C_FLOW),
-          detail('日均可用', fmtMB(ins.dailyMB), C_OTHER),
+          textNode('近 7 日流量', 10, 'semibold', TXT),
+          { type: 'spacer' },
+          textNode(ins.forecast, 9, 'medium', C_FLOW),
         ],
       },
-      panel([
-        icon('calendar', C_FEE, 16),
-        textNode(`本月剩 ${ins.daysLeft} 天 · ${ins.forecast}`, 12, 'semibold', TXT),
-      ], FEE_BG, { direction: 'row', alignItems: 'center', padding: 10 }),
-      ...(ds.planDebug ? [textNode(ds.planDebug, 9, 'regular', SUB, { maxLines: 3 })] : []),
+      { type: 'image', src: mediumHistorySvg(ins.hist, 278, 57), width: 278, height: 57 },
+      {
+        type: 'stack', direction: 'row', alignItems: 'center', gap: 8,
+        children: [
+          detail('今日已用', fmtMB(ins.todayMB), C_FLOW),
+          detail('日均可用', fmtMB(ins.dailyMB), C_OTHER),
+          detail('本月剩余', `${ins.daysLeft} 天`, C_FEE),
+        ],
+      },
     ],
   };
 }
