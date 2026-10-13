@@ -113,7 +113,7 @@ YYB 的 wxapp 调用会消耗额度，上游失败也计次。YYB 密钥或授�
 在 Egern 中导入模块：
 
 ```
-https://raw.githubusercontent.com/Tiomehsh/egern/843fb70/widget/china-mobile-bytevalley-egern.yaml
+https://raw.githubusercontent.com/Tiomehsh/egern/c748ca9/widget/china-mobile-bytevalley-egern.yaml
 ```
 
 在模块 Env 填写 `CM_PHONENUMBER`（11 位移动手机号）。安装并信任 Egern 的 MITM 证书后，打开「中国移动」App，用短信验证码登录一次以捕获登录参数。随后在 Egern 小组件图库选择 `china-mobile-bytevalley-egern`。如果启用了原 Hark 仪表盘模块，先关闭原模块，避免重复处理登录请求。
