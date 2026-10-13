@@ -1097,154 +1097,123 @@ function mediumUpdateTime(ds, fromCache) {
   return `${fromCache ? '缓存 · ' : '更新 '}${time}`;
 }
 
-function buildMedium(title, ds, fromCache, ctx) {
-  const ins = insights(ctx, ds);
+// One shared grid keeps headers, metrics and charts on the same edges.
+const DASHBOARD_WIDTH = 278;
+
+function centeredDashboard(content) {
+  return {
+    type: 'stack', direction: 'row', alignItems: 'center',
+    children: [{ type: 'spacer' }, content, { type: 'spacer' }],
+  };
+}
+
+function dashboardSections(title, ds, fromCache, ctx) {
   const rawPhone = getPhone(ctx);
   const phone = /^\d{11}$/.test(rawPhone)
-    ? `${rawPhone.slice(0, 3)} **** ${rawPhone.slice(7)}` : '号码未设置';
-  const balance = parseFloat(ds.fee && ds.fee.number);
-  const lowFee = Number.isFinite(balance) && balance < 10;
+    ? `${rawPhone.slice(0, 3)} **** ${rawPhone.slice(7)}` : '';
   const flow = ds.flow || { number: '--', unit: '', percent: 0 };
   const usedFlow = flow.title === '已用流量';
   const flowRatio = usedFlow ? 1 - ratio(flow) : ratio(flow);
-  const progressWidth = 172;
-  const voice = ds.voice || { number: '--', unit: '分钟' };
-  return {
-    type: 'widget', padding: [10, 12], gap: 7,
-    backgroundColor: SURFACE, refreshAfter: refreshAfter(),
+  const other = ds.otherFlow || { number: '--', unit: '' };
+  return [
+    {
+      type: 'stack', direction: 'row', alignItems: 'center', width: DASHBOARD_WIDTH, gap: 5,
+      children: [
+        icon('antenna.radiowaves.left.and.right', C_FEE, 13),
+        textNode(title, 12, 'bold', TXT),
+        textNode(phone, 8, 'regular', SUB),
+        { type: 'spacer' },
+        textNode(mediumUpdateTime(ds, fromCache), 8, 'medium', SUB),
+      ],
+    },
+    {
+      type: 'stack', direction: 'row', alignItems: 'start', width: DASHBOARD_WIDTH, gap: 8,
+      children: [
+        mediumMetric('剩余话费', Object.assign({}, ds.fee, { unit: '元' }), C_FEE, 20),
+        mediumMetric(usedFlow ? '已用流量' : '通用流量', flow, TXT, 20),
+        mediumMetric('剩余语音', ds.voice || { number: '--', unit: '分钟' }, TXT, 20),
+      ],
+    },
+    {
+      type: 'stack', direction: 'column', alignItems: 'start', width: DASHBOARD_WIDTH, gap: 5,
+      children: [
+        {
+          type: 'stack', direction: 'row', alignItems: 'center', width: DASHBOARD_WIDTH,
+          children: [
+            textNode(usedFlow ? '通用流量已用' : '通用流量剩余', 9, 'medium', SUB),
+            { type: 'spacer' },
+            textNode(`${Math.round(flowRatio * 100)}%`, 9, 'medium', SUB),
+          ],
+        },
+        { type: 'image', src: mediumProgressSvg(flowRatio, DASHBOARD_WIDTH), width: DASHBOARD_WIDTH, height: 6 },
+      ],
+    },
+    textNode(`其他流量  ${other.number} ${other.unit || ''}`, 9, 'medium', SUB),
+  ];
+}
+
+function buildMedium(title, ds, fromCache, ctx) {
+  const ins = insights(ctx, ds);
+  const sections = dashboardSections(title, ds, fromCache, ctx);
+  const content = {
+    type: 'stack', direction: 'column', alignItems: 'start', width: DASHBOARD_WIDTH, gap: 11,
     children: [
+      ...sections.slice(0, 3),
       {
-        type: 'stack', direction: 'row', alignItems: 'center', gap: 6,
+        type: 'stack', direction: 'row', alignItems: 'center', width: DASHBOARD_WIDTH, gap: 5,
         children: [
-          icon('antenna.radiowaves.left.and.right', C_FEE, 15),
-          textNode(title, 13, 'bold', TXT),
+          { type: 'image', src: mediumHistorySvg(ins.hist, 36, 15), width: 36, height: 15 },
+          textNode('近7日用量', 8, 'medium', SUB),
           { type: 'spacer' },
-          textNode(mediumUpdateTime(ds, fromCache), 9, 'medium', SUB),
-        ],
-      },
-      {
-        type: 'stack', direction: 'row', alignItems: 'center', flex: 1, gap: 10,
-        children: [
-          {
-            type: 'stack', direction: 'column', alignItems: 'start', width: 108, height: 120,
-            children: [
-              textNode('当前号码', 9, 'medium', SUB),
-              textNode(phone, 11, 'semibold', TXT, { minScale: 0.6 }),
-              { type: 'spacer' },
-              textNode('剩余话费', 10, 'medium', SUB),
-              {
-                type: 'stack', direction: 'row', alignItems: 'end', gap: 3,
-                children: [
-                  textNode(ds.fee.number, 20, 'bold', C_FEE, { minScale: 0.5 }),
-                  textNode('元', 9, 'medium', SUB),
-                ],
-              },
-              { type: 'spacer' },
-              {
-                type: 'stack', direction: 'row', alignItems: 'center', gap: 4,
-                children: [
-                  icon(lowFee ? 'exclamationmark.circle.fill' : 'checkmark.circle.fill', lowFee ? C_VOICE : C_FEE, 10),
-                  textNode(lowFee ? '话费不足' : '余额充足', 9, 'medium', SUB),
-                ],
-              },
-            ],
-          },
-          { type: 'stack', width: 1, height: 120, backgroundColor: { light: '#E3E5E8', dark: '#3C3C3E' } },
-          {
-            type: 'stack', direction: 'column', alignItems: 'start', flex: 1, height: 120, gap: 8,
-            children: [
-              {
-                type: 'stack', direction: 'row', alignItems: 'start', gap: 5,
-                children: [
-                  mediumMetric(usedFlow ? '已用流量' : '通用流量', flow, TXT, 19),
-                  mediumMetric('其他流量', ds.otherFlow, TXT, 16),
-                ],
-              },
-              {
-                type: 'stack', direction: 'column', alignItems: 'start', gap: 4,
-                children: [
-                  {
-                    type: 'stack', direction: 'row', alignItems: 'center', width: progressWidth,
-                    children: [
-                      textNode(usedFlow ? '通用流量已用' : '通用流量余量', 9, 'medium', SUB),
-                      { type: 'spacer' },
-                      textNode(`${Math.round(flowRatio * 100)}%`, 9, 'medium', SUB),
-                    ],
-                  },
-                  { type: 'image', src: mediumProgressSvg(flowRatio, progressWidth), width: progressWidth, height: 6 },
-                ],
-              },
-              { type: 'spacer' },
-              {
-                type: 'stack', direction: 'row', alignItems: 'end', gap: 6,
-                children: [
-                  {
-                    type: 'stack', direction: 'column', alignItems: 'start', gap: 2,
-                    children: [
-                      { type: 'image', src: mediumHistorySvg(ins.hist), width: 80, height: 34 },
-                      textNode('近 7 日用量', 8, 'medium', SUB),
-                    ],
-                  },
-                  { type: 'spacer' },
-                  {
-                    type: 'stack', direction: 'column', alignItems: 'end', gap: 2,
-                    children: [
-                      textNode('剩余语音', 9, 'medium', SUB),
-                      {
-                        type: 'stack', direction: 'row', alignItems: 'end', gap: 2,
-                        children: [
-                          textNode(voice.number, 19, 'bold', TXT, { minScale: 0.45 }),
-                          textNode(voice.unit || '分钟', 9, 'medium', SUB),
-                        ],
-                      },
-                    ],
-                  },
-                ],
-              },
-            ],
-          },
+          sections[3],
         ],
       },
     ],
   };
+  return {
+    type: 'widget', padding: [10, 12], gap: 0,
+    backgroundColor: SURFACE, refreshAfter: refreshAfter(),
+    children: [{ type: 'spacer' }, centeredDashboard(content), { type: 'spacer' }],
+  };
 }
 
 function buildLarge(title, ds, fromCache, ctx) {
-  const medium = buildMedium(title, ds, fromCache, ctx);
   const ins = insights(ctx, ds);
-  const mediumBody = Object.assign({}, medium.children[1], { height: 140 });
-  delete mediumBody.flex;
-  mediumBody.children = mediumBody.children.map(child =>
-    child.height === 120 ? Object.assign({}, child, { height: 140 }) : child);
-  const detail = (label, value, color) => panel([
+  const sections = dashboardSections(title, ds, fromCache, ctx);
+  const detail = (label, value) => panel([
     textNode(label, 9, 'medium', SUB),
-    textNode(value, 15, 'semibold', color),
-  ], FEE_BG, { flex: 1, height: 37, gap: 1, padding: 5, borderRadius: 10 });
-  return {
-    type: 'widget', padding: [13, 16], gap: 8,
-    backgroundColor: SURFACE, refreshAfter: refreshAfter(),
+    textNode(value, 14, 'semibold', TXT),
+  ], SMALL_ROW_BG, { flex: 1, height: 39, gap: 3, padding: 6, borderRadius: 10 });
+  const content = {
+    type: 'stack', direction: 'column', alignItems: 'start', width: DASHBOARD_WIDTH, gap: 14,
     children: [
-      medium.children[0],
-      mediumBody,
-      { type: 'stack', height: 1, backgroundColor: { light: '#E3E5E8', dark: '#3C3C3E' } },
+      ...sections.slice(0, 3),
       {
-        type: 'stack', direction: 'row', alignItems: 'center', gap: 7,
+        type: 'stack', direction: 'row', alignItems: 'center', width: DASHBOARD_WIDTH,
+        children: [textNode(ins.forecast, 9, 'medium', SUB), { type: 'spacer' }, sections[3]],
+      },
+      { type: 'stack', width: DASHBOARD_WIDTH, height: 1, backgroundColor: { light: '#E3E5E8', dark: '#3C3C3E' } },
+      {
+        type: 'stack', direction: 'column', alignItems: 'start', gap: 7,
         children: [
-          textNode('近 7 日流量', 10, 'semibold', TXT),
-          { type: 'spacer' },
-          textNode(ins.forecast, 9, 'medium', SUB),
+          textNode('近7日用量', 10, 'medium', SUB),
+          { type: 'image', src: mediumHistorySvg(ins.hist, DASHBOARD_WIDTH, 57), width: DASHBOARD_WIDTH, height: 57 },
         ],
       },
-      { type: 'image', src: mediumHistorySvg(ins.hist, 278, 57), width: 278, height: 57 },
       {
-        type: 'stack', direction: 'row', alignItems: 'center', gap: 8,
+        type: 'stack', direction: 'row', alignItems: 'center', width: DASHBOARD_WIDTH, gap: 8,
         children: [
-          detail('今日已用', fmtMB(ins.todayMB), C_FEE),
-          detail('日均可用', fmtMB(ins.dailyMB), C_FEE),
-          detail('本月剩余', `${ins.daysLeft} 天`, C_FEE),
+          detail('今日已用', fmtMB(ins.todayMB)),
+          detail('日均可用', fmtMB(ins.dailyMB)),
+          detail('本月剩余', `${ins.daysLeft} 天`),
         ],
       },
     ],
+  };
+  return {
+    type: 'widget', padding: [12, 16], gap: 0,
+    backgroundColor: SURFACE, refreshAfter: refreshAfter(),
+    children: [{ type: 'spacer' }, centeredDashboard(content), { type: 'spacer' }],
   };
 }
 
