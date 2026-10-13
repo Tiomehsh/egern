@@ -106,14 +106,14 @@ YYB 的 wxapp 调用会消耗额度，上游失败也计次。YYB 密钥或授�
 ---
 ## 中国移动四卡圆环
 
-基于 Hark 的中国移动查询脚本，参考 ByteValley 中国移动小组件的视觉样式。小号采用居中的三张横向信息卡，显示话费、通用流量和语音；中号采用左右分栏，展示号码、话费、流量、进度及近 7 天用量；大号沿用中号结构并扩展用量图表。支持桌面和锁屏尺寸。
+基于 Hark 的中国移动查询脚本，参考 ByteValley 中国移动小组件的视觉样式。小号采用居中的三张横向信息卡，显示话费、通用流量和语音；中号采用蓝色与灰色的左右分栏，展示号码、话费、流量、从左端填充的通用流量余量进度及近 7 天用量；大号沿用中号结构并扩展用量图表。支持桌面和锁屏尺寸。
 
 ### 安装
 
 在 Egern 中导入模块：
 
 ```
-https://raw.githubusercontent.com/Tiomehsh/egern/c748ca9/widget/china-mobile-bytevalley-egern.yaml
+https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/china-mobile-bytevalley-egern.yaml
 ```
 
 在模块 Env 填写 `CM_PHONENUMBER`（11 位移动手机号）。安装并信任 Egern 的 MITM 证书后，打开「中国移动」App，用短信验证码登录一次以捕获登录参数。随后在 Egern 小组件图库选择 `china-mobile-bytevalley-egern`。如果启用了原 Hark 仪表盘模块，先关闭原模块，避免重复处理登录请求。
