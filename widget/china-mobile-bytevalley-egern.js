@@ -1033,7 +1033,7 @@ function buildSmall(title, ds, fromCache, ctx) {
   const flow = ds.flow || { number: '--', unit: '' };
   const voice = ds.voice || { number: '--', unit: '分钟' };
   return {
-    type: 'widget', padding: [7, 8], gap: 0, refreshAfter: refreshAfter(),
+    type: 'widget', backgroundColor: '#00000000', padding: [7, 8], gap: 0, refreshAfter: refreshAfter(),
     children: [
       { type: 'spacer' },
       centeredSmallCard(smallInfoCard('剩余话费', ds.fee.number, '元', harkIOS.colors.fee, '', true)),
@@ -1057,7 +1057,7 @@ const C_VOICE = '#30D158';
 const WARN = '#FF453A';
 const TXT = { light: '#000000', dark: '#FFFFFF' };
 const SUB = { light: '#3C3C4399', dark: '#EBEBF599' };
-const GLASS = { light: 'rgba(255, 255, 255, 0.18)', dark: 'rgba(255, 255, 255, 0.08)' };
+const GLASS = '#00000000';
 
 /* ---------- 用量洞察 ---------- */
 
@@ -1282,7 +1282,7 @@ function buildMedium(title, ds, fromCache, ctx) {
   const ins = insights(ctx, ds);
   const other = ds.otherFlow || { title: '其他流量', number: '--', unit: '' };
   return {
-    type: 'widget', padding: [12, 14], gap: 8,
+    type: 'widget', backgroundColor: '#00000000', padding: [12, 14], gap: 8,
     refreshAfter: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
     children: [
       header(title, ds, fromCache),
@@ -1337,7 +1337,7 @@ function buildLarge(title, ds, fromCache, ctx) {
     { type: 'image', src: barSvg(d.percent, color, 300, 6), width: 296, height: 6 },
   ], { gap: 6, padding: [8, 12], borderRadius: 16, height: 48 });
   return {
-    type: 'widget', padding: [13, 15], gap: 7,
+    type: 'widget', backgroundColor: '#00000000', padding: [13, 15], gap: 7,
     refreshAfter: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
     children: [
       header(title, ds, fromCache),
@@ -1415,7 +1415,7 @@ function buildLockScreen(title, ds, family, ctx) {
 
 function buildError(title, message, extra) {
   return {
-    type: 'widget', padding: 14, gap: 7,
+    type: 'widget', backgroundColor: '#00000000', padding: 14, gap: 7,
     children: [
       textNode(title, 13, 'semibold'), { type: 'spacer' },
       icon('exclamationmark.triangle.fill', C_FEE, 22),
