@@ -469,10 +469,6 @@ function iconSrc(color = '#FF9F0A') {
   return `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M13 2 3 14h7l-1 8 10-12h-7l1-8z' fill='${color}'/></svg>`;
 }
 
-function titleIcon(size = 13, color = '#FF9F0A') {
-  return { type: 'image', src: iconSrc(color), width: size, height: size, resizeMode: 'contain' };
-}
-
 function formatTime(timestamp, compact = false) {
   if (!timestamp) return '--';
   const date = new Date(timestamp);
@@ -484,11 +480,10 @@ function formatTime(timestamp, compact = false) {
   return compact ? `${hour}:${minute}` : `${month}-${day} ${hour}:${minute}`;
 }
 
-function headerRow(meter, stale, iconSize, timeSize = 9) {
+function headerRow(meter, stale, timeSize = 9) {
   return {
-    type: 'stack', direction: 'row', alignItems: 'center', gap: 6,
+    type: 'stack', direction: 'row', alignItems: 'center',
     children: [
-      titleIcon(iconSize),
       { type: 'spacer' },
       text(formatTime(meter.dataAt), timeSize, stale ? C.warn : C.dim, 'medium', { minScale: 0.7 })
     ]
@@ -537,7 +532,6 @@ function emptyWidget(data, ctx, family) {
       {
         type: 'stack', direction: 'row', alignItems: 'center',
         children: [
-          titleIcon(compact ? 11 : 13, '#FF453A'),
           { type: 'spacer' },
           text('--', compact ? 9 : 10, C.dim, 'medium')
         ]
@@ -547,19 +541,6 @@ function emptyWidget(data, ctx, family) {
         font: { size: compact ? 32 : 40, weight: 'bold', family: 'Menlo' }
       }),
       text(data.error || '读取失败', 10, C.dim, 'medium', { maxLines: 2, minScale: 0.65 }),
-      { type: 'spacer' }
-    ]
-  };
-}
-
-function balanceValue(meter, color, size) {
-  return {
-    type: 'stack', direction: 'row', alignItems: 'end', gap: 6,
-    children: [
-      text(formatFixed(meter.remaining), size, color, 'bold', {
-        font: { size, weight: 'bold', family: 'Menlo' }, minScale: 0.5
-      }),
-      text('度', size >= 40 ? 13 : 11, C.dim, 'semibold'),
       { type: 'spacer' }
     ]
   };
@@ -643,6 +624,23 @@ function centeredBalanceValue(meter, color, size) {
   };
 }
 
+function centeredBalanceBlock(meter, color, valueSize, labelSize = 12) {
+  return {
+    type: 'stack', direction: 'row', alignItems: 'center',
+    children: [
+      { type: 'spacer' },
+      {
+        type: 'stack', direction: 'column', alignItems: 'center', gap: 6,
+        children: [
+          text('电量还剩', labelSize, C.dim, 'medium', { textAlign: 'center' }),
+          centeredBalanceValue(meter, color, valueSize)
+        ]
+      },
+      { type: 'spacer' }
+    ]
+  };
+}
+
 function smallHomeWidget(data, ctx) {
   const meter = data.meter;
   const color = statusColor(data);
@@ -650,21 +648,9 @@ function smallHomeWidget(data, ctx) {
     type: 'widget', ...rootBackground(ctx), padding: [16, 17], gap: 7,
     refreshAfter: refreshAfter(ctx),
     children: [
+      headerRow(meter, meter.stale, 9),
       { type: 'spacer' },
-      {
-        type: 'stack', direction: 'row', alignItems: 'center',
-        children: [
-          { type: 'spacer' },
-          {
-            type: 'stack', direction: 'column', alignItems: 'center', gap: 6,
-            children: [
-              text('电量还剩', 12, C.dim, 'medium', { textAlign: 'center' }),
-              centeredBalanceValue(meter, color, 31)
-            ]
-          },
-          { type: 'spacer' }
-        ]
-      },
+      centeredBalanceBlock(meter, color, 31),
       { type: 'spacer' }
     ]
   };
@@ -677,7 +663,7 @@ function mediumHomeWidget(data, ctx) {
     type: 'widget', ...rootBackground(ctx), padding: [17, 19], gap: 8,
     refreshAfter: refreshAfter(ctx),
     children: [
-      headerRow(meter, meter.stale, 12, 9),
+      headerRow(meter, meter.stale, 9),
       {
         type: 'stack', direction: 'row', flex: 1, gap: 13,
         children: [
@@ -685,7 +671,7 @@ function mediumHomeWidget(data, ctx) {
             type: 'stack', direction: 'column', width: 142,
             children: [
               { type: 'spacer' },
-              balanceValue(meter, color, 31),
+              centeredBalanceBlock(meter, color, 31, 11),
               { type: 'spacer' }
             ]
           },
@@ -704,9 +690,9 @@ function largeHomeWidget(data, ctx, extraLarge = false) {
     type: 'widget', ...rootBackground(ctx), padding: extraLarge ? [23, 28] : [22, 24], gap: 7,
     refreshAfter: refreshAfter(ctx),
     children: [
-      headerRow(meter, meter.stale, extraLarge ? 15 : 13, 10),
+      headerRow(meter, meter.stale, 10),
       { type: 'spacer', length: 6 },
-      balanceValue(meter, color, extraLarge ? 51 : 43),
+      centeredBalanceBlock(meter, color, extraLarge ? 51 : 43, extraLarge ? 13 : 12),
       { type: 'spacer', length: 12 },
       { type: 'stack', height: 1, backgroundColor: C.line },
       { type: 'spacer', length: 8 },
