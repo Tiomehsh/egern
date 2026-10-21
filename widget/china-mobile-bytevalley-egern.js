@@ -1057,7 +1057,7 @@ const C_VOICE = '#30D158';
 const WARN = '#FF453A';
 const TXT = { light: '#000000', dark: '#FFFFFF' };
 const SUB = { light: '#3C3C4399', dark: '#EBEBF599' };
-const GLASS = { light: '#FFFFFFA6', dark: '#FFFFFF1A' };
+const GLASS = { light: 'rgba(255, 255, 255, 0.18)', dark: 'rgba(255, 255, 255, 0.08)' };
 
 /* ---------- 用量洞察 ---------- */
 
