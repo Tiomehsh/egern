@@ -28,11 +28,11 @@
 const C = {
   bg:    { light: '#FFFFFF', dark: '#050506' },
   text:  { light: '#111114', dark: '#F7F7F8' },
-  dim:   { light: '#7B7B84', dark: '#85858E' },
-  ok:    { light: '#2F9E58', dark: '#76E39A' },
-  warn:  { light: '#A06400', dark: '#FFBE3F' },
-  fail:  { light: '#D64545', dark: '#FF626A' },
-  line:  { light: '#E1E2E5', dark: '#303035' }
+  dim:   { light: '#6E6E73', dark: '#98989F' },
+  ok:    { light: '#248A3D', dark: '#30D158' },
+  warn:  { light: '#B25000', dark: '#FF9F0A' },
+  fail:  { light: '#D70015', dark: '#FF453A' },
+  line:  { light: '#D8D8DC', dark: '#38383A' }
 };
 
 const API_URL = 'https://bb2.minyie.cn/ruoyi-bb/platform/bar/user/getMeterDataByUser';
@@ -465,18 +465,12 @@ function formatFixed(value) {
   return Number.isFinite(value) ? value.toFixed(2) : '--';
 }
 
-function iconSrc(color = '#7B7B84') {
+function iconSrc(color = '#FF9F0A') {
   return `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M13 2 3 14h7l-1 8 10-12h-7l1-8z' fill='${color}'/></svg>`;
 }
 
-function titleRow(name, color, size = 12, iconSize = 13) {
-  return {
-    type: 'stack', direction: 'row', alignItems: 'center', gap: 6,
-    children: [
-      { type: 'image', src: iconSrc(color), width: iconSize, height: iconSize, resizeMode: 'contain' },
-      text(name, size, C.dim, 'bold', { minScale: 0.65 })
-    ]
-  };
+function titleIcon(size = 13, color = '#FF9F0A') {
+  return { type: 'image', src: iconSrc(color), width: size, height: size, resizeMode: 'contain' };
 }
 
 function formatTime(timestamp, compact = false) {
@@ -490,11 +484,11 @@ function formatTime(timestamp, compact = false) {
   return compact ? `${hour}:${minute}` : `${month}-${day} ${hour}:${minute}`;
 }
 
-function headerRow(meter, stale, titleSize, iconSize, timeSize = 9) {
+function headerRow(meter, stale, iconSize, timeSize = 9) {
   return {
     type: 'stack', direction: 'row', alignItems: 'center', gap: 6,
     children: [
-      titleRow(meter.name, '#FFBE3F', titleSize, iconSize),
+      titleIcon(iconSize),
       { type: 'spacer' },
       text(formatTime(meter.dataAt), timeSize, stale ? C.warn : C.dim, 'medium', { minScale: 0.7 })
     ]
@@ -543,7 +537,7 @@ function emptyWidget(data, ctx, family) {
       {
         type: 'stack', direction: 'row', alignItems: 'center',
         children: [
-          titleRow(data.name || '电量监控', '#FF626A', compact ? 11 : 12, compact ? 11 : 13),
+          titleIcon(compact ? 11 : 13, '#FF453A'),
           { type: 'spacer' },
           text('--', compact ? 9 : 10, C.dim, 'medium')
         ]
@@ -644,7 +638,7 @@ function smallHomeWidget(data, ctx) {
     type: 'widget', ...rootBackground(ctx), padding: [16, 17], gap: 7,
     refreshAfter: refreshAfter(ctx),
     children: [
-      headerRow(meter, meter.stale, 11, 11, 9),
+      headerRow(meter, meter.stale, 11, 9),
       { type: 'spacer' },
       balanceValue(meter, color, 31),
       { type: 'spacer' }
@@ -659,7 +653,7 @@ function mediumHomeWidget(data, ctx) {
     type: 'widget', ...rootBackground(ctx), padding: [17, 19], gap: 8,
     refreshAfter: refreshAfter(ctx),
     children: [
-      headerRow(meter, meter.stale, 11, 12, 9),
+      headerRow(meter, meter.stale, 12, 9),
       {
         type: 'stack', direction: 'row', flex: 1, gap: 13,
         children: [
@@ -686,7 +680,7 @@ function largeHomeWidget(data, ctx, extraLarge = false) {
     type: 'widget', ...rootBackground(ctx), padding: extraLarge ? [23, 28] : [22, 24], gap: 7,
     refreshAfter: refreshAfter(ctx),
     children: [
-      headerRow(meter, meter.stale, extraLarge ? 15 : 13, extraLarge ? 15 : 13, 10),
+      headerRow(meter, meter.stale, extraLarge ? 15 : 13, 10),
       { type: 'spacer', length: 6 },
       balanceValue(meter, color, extraLarge ? 51 : 43),
       { type: 'spacer', length: 12 },
@@ -731,7 +725,7 @@ function accessoryWidget(data, family) {
       {
         type: 'stack', direction: 'row', alignItems: 'center', gap: 4,
         children: [
-          { type: 'image', src: iconSrc('#FFBE3F'), width: 10, height: 10, resizeMode: 'contain' },
+          { type: 'image', src: iconSrc('#FF9F0A'), width: 10, height: 10, resizeMode: 'contain' },
           text(meter.name, 10, C.text, 'semibold', { minScale: 0.65 })
         ]
       },

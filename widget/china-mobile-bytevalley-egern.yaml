@@ -1,5 +1,5 @@
 name: "中国移动（ByteValley 风格 · Egern）"
-description: "桌面/锁屏小组件：小号三条信息卡，采用 Hark iOS 配色与渐变玻璃背景；中号/大号直接采用 Hark iOS 圆环与玻璃卡片布局。沿用原版登录抓取、查询、缓存与保活。先在「中国移动」App 用短信验证码登录一次自动捕获参数"
+description: "桌面/锁屏小组件：小号三条信息卡，采用 Hark iOS 配色与透明玻璃背景；中号/大号直接采用 Hark iOS 圆环与玻璃卡片布局。沿用原版登录抓取、查询、缓存与保活。先在「中国移动」App 用短信验证码登录一次自动捕获参数"
 author: "Tiomehsh（数据逻辑：zhaohantao1360-hash；视觉参考：ByteValley / Hark iOS）"
 icon: "antenna.radiowaves.left.and.right"
 
@@ -27,7 +27,7 @@ scriptings:
   # 小组件脚本（generic）
   - generic:
       name: "china-mobile-bytevalley-egern"
-      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/9a26e62b59af291d7fbef83179dec67e454af4b7/widget/china-mobile-bytevalley-egern.js"
+      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/china-mobile-bytevalley-egern.js"
       update_interval: 3600
       timeout: 20
 
@@ -35,7 +35,7 @@ scriptings:
   - schedule:
       name: "中国移动保活-四卡圆环"
       cron: "*/20 * * * *"
-      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/9a26e62b59af291d7fbef83179dec67e454af4b7/widget/china-mobile-bytevalley-egern.js"
+      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/china-mobile-bytevalley-egern.js"
       update_interval: 3600
       timeout: 30
       env:
@@ -45,7 +45,7 @@ scriptings:
   - http_request:
       name: "中国移动登录捕获-四卡圆环"
       match: '^https?:\/\/(client\.app\.coc\.10086\.cn|10086\.online-cmcc\.cn)(:\d+)?\/'
-      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/9a26e62b59af291d7fbef83179dec67e454af4b7/widget/china-mobile-bytevalley-egern.js"
+      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/china-mobile-bytevalley-egern.js"
       update_interval: 3600
       body_required: true
       timeout: 10
@@ -54,7 +54,7 @@ scriptings:
   - http_response:
       name: "中国移动Cookie捕获-四卡圆环"
       match: '^https?:\/\/(client\.app\.coc\.10086\.cn|10086\.online-cmcc\.cn)(:\d+)?\/'
-      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/9a26e62b59af291d7fbef83179dec67e454af4b7/widget/china-mobile-bytevalley-egern.js"
+      script_url: "https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/china-mobile-bytevalley-egern.js"
       update_interval: 3600
       timeout: 10
 

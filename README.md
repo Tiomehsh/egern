@@ -62,10 +62,10 @@ https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/sub-widget.yaml
 
 - ⚡ 每次到达抄表间隔后调用 `sendMeterPacketTask` 主动抄表
 - 🔄 轮询电表接口，等待 `remainingPowerTime` 更新后再渲染
-- 🧾 小号只保留闪电图标标题、当前电量（固定两位小数）和数据时间
+- 🧾 小号只保留闪电图标、当前电量（固定两位小数）和数据时间
 - 📊 中号右侧用绿色迷你横向柱状图显示今天、昨天、前天的每日用电量
 - 📈 大号底部用同色 7 根柱状图显示最近 7 天每日用电量
-- 🕒 标题固定在左上角，电表数据时间固定在右上角
+- 🕒 闪电图标固定在左上角，电表数据时间固定在右上角
 - 💾 电表或报表接口暂时失败时使用上次成功缓存
 - 🌗 支持玻璃透明和经典深浅色两种风格
 - 🔐 支持 YYB 获取微信登录 code，Token 缺失或失效时自动续期；密钥通过 Egern 环境变量配置，新 Token 保存在 Egern 本地存储
@@ -106,7 +106,7 @@ YYB 的 wxapp 调用会消耗额度，上游失败也计次。YYB 密钥或授�
 ---
 ## 中国移动四卡圆环
 
-基于 Hark 的中国移动查询脚本。小号保留居中的三张横向信息卡，采用 Hark iOS 的橙色话费、蓝色流量和绿色语音配色，以及与中大号一致的渐变背景和半透明卡片；中号与大号直接移植 [Hark iOS 版](https://github.com/zhaohantao1360-hash/Hark/blob/main/china-mobile-hark-ios.js)的三层圆环、渐变背景和玻璃卡片布局。支持桌面和锁屏尺寸。
+基于 Hark 的中国移动查询脚本。小号保留居中的三张横向信息卡，采用 Hark iOS 的橙色话费、蓝色流量和绿色语音配色，以及与中大号一致的透明玻璃背景和半透明卡片；中号与大号直接移植 [Hark iOS 版](https://github.com/zhaohantao1360-hash/Hark/blob/main/china-mobile-hark-ios.js)的三层圆环和玻璃卡片布局。支持桌面和锁屏尺寸。
 
 ### 安装
 

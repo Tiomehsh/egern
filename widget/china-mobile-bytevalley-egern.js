@@ -848,7 +848,6 @@ const C_OTHER = { light: '#8A6EFF', dark: '#C59BFF' };
 const C_VOICE = { light: '#F86527', dark: '#FFB07A' };
 const TXT = { light: '#18212D', dark: '#F5F7FA' };
 const SUB = { light: '#667181', dark: '#AAB4C2' };
-const SURFACE = { light: '#FFFFFF', dark: '#000000' };
 const FEE_BG = { light: '#0080CB10', dark: '#051020' };
 const FLOW_BG = { light: '#32CD3214', dark: '#03091C' };
 const OTHER_BG = { light: '#8A6EFF1A', dark: '#080618' };
@@ -1034,8 +1033,7 @@ function buildSmall(title, ds, fromCache, ctx) {
   const flow = ds.flow || { number: '--', unit: '' };
   const voice = ds.voice || { number: '--', unit: '分钟' };
   return {
-    type: 'widget', padding: [7, 8], gap: 0,
-    backgroundGradient: harkIOS.backgroundGradient(), refreshAfter: refreshAfter(),
+    type: 'widget', padding: [7, 8], gap: 0, refreshAfter: refreshAfter(),
     children: [
       { type: 'spacer' },
       centeredSmallCard(smallInfoCard('剩余话费', ds.fee.number, '元', harkIOS.colors.fee, '', true)),
@@ -1060,16 +1058,6 @@ const WARN = '#FF453A';
 const TXT = { light: '#000000', dark: '#FFFFFF' };
 const SUB = { light: '#3C3C4399', dark: '#EBEBF599' };
 const GLASS = { light: '#FFFFFFA6', dark: '#FFFFFF1A' };
-
-function bg() {
-  return {
-    type: 'linear',
-    colors: [{ light: '#EAF3FF', dark: '#0B1A33' }, { light: '#F4F0FF', dark: '#120B24' }, { light: '#E9FBF3', dark: '#03140F' }],
-    stops: [0, 0.55, 1],
-    startPoint: { x: 0, y: 0 },
-    endPoint: { x: 1, y: 1 },
-  };
-}
 
 /* ---------- 用量洞察 ---------- */
 
@@ -1294,7 +1282,7 @@ function buildMedium(title, ds, fromCache, ctx) {
   const ins = insights(ctx, ds);
   const other = ds.otherFlow || { title: '其他流量', number: '--', unit: '' };
   return {
-    type: 'widget', padding: [12, 14], gap: 8, backgroundGradient: bg(),
+    type: 'widget', padding: [12, 14], gap: 8,
     refreshAfter: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
     children: [
       header(title, ds, fromCache),
@@ -1349,7 +1337,7 @@ function buildLarge(title, ds, fromCache, ctx) {
     { type: 'image', src: barSvg(d.percent, color, 300, 6), width: 296, height: 6 },
   ], { gap: 6, padding: [8, 12], borderRadius: 16, height: 48 });
   return {
-    type: 'widget', padding: [13, 15], gap: 7, backgroundGradient: bg(),
+    type: 'widget', padding: [13, 15], gap: 7,
     refreshAfter: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
     children: [
       header(title, ds, fromCache),
@@ -1388,7 +1376,7 @@ function buildLarge(title, ds, fromCache, ctx) {
   };
 }
 
-  return { buildMedium, buildLarge, backgroundGradient: bg, glassBackground: GLASS, colors: { fee: C_FEE, flow: C_FLOW, voice: C_VOICE } };
+  return { buildMedium, buildLarge, glassBackground: GLASS, colors: { fee: C_FEE, flow: C_FLOW, voice: C_VOICE } };
 })();
 
 function buildMedium(title, ds, fromCache, ctx) {
@@ -1427,7 +1415,7 @@ function buildLockScreen(title, ds, family, ctx) {
 
 function buildError(title, message, extra) {
   return {
-    type: 'widget', padding: 14, gap: 7, backgroundColor: SURFACE,
+    type: 'widget', padding: 14, gap: 7,
     children: [
       textNode(title, 13, 'semibold'), { type: 'spacer' },
       icon('exclamationmark.triangle.fill', C_FEE, 22),
