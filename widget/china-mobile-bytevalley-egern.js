@@ -1,7 +1,6 @@
 /*
- * 中国移动小组件（Egern 版）· ByteValley 四卡圆环风格
+ * 中国移动信息组件（Egern 版）
  * 数据层基于 https://github.com/zhaohantao1360-hash/Hark
- * 视觉参考 https://github.com/ByteValley/NetTool
  * 状态：数据层已补全（逆向自 ChinaTelecomOperators/ChinaMobile 的 10086.js，加解密已验证）
  *
  * 四种用法（脚本 URL 填同一个文件）：
@@ -997,7 +996,7 @@ function smallInfoCard(label, value, unit, color, symbol, useLogo) {
   return {
     type: 'stack', direction: 'row', alignItems: 'center',
     width: 143, height: 40, padding: [5, 10], gap: 4,
-    borderRadius: 17, backgroundColor: harkIOS.glassBackground,
+    borderRadius: 17, backgroundColor: harkIOS.glassBackground, borderWidth: 1, borderColor: harkIOS.glassBorder,
     children: [
       {
         type: 'stack', direction: 'column', alignItems: 'start', gap: 1, flex: 1,
@@ -1058,6 +1057,7 @@ const WARN = '#FF453A';
 const TXT = { light: '#000000', dark: '#FFFFFF' };
 const SUB = { light: '#3C3C4399', dark: '#EBEBF599' };
 const GLASS = '#00000000';
+const GLASS_BORDER = { light: 'rgba(0, 0, 0, 0.12)', dark: 'rgba(255, 255, 255, 0.20)' };
 
 /* ---------- 用量洞察 ---------- */
 
@@ -1273,7 +1273,7 @@ function chip(icon, color, text) {
 }
 
 function glass(children, extra) {
-  return Object.assign({ type: 'stack', direction: 'column', alignItems: 'start', gap: 6, padding: 12, borderRadius: 22, backgroundColor: GLASS, children }, extra || {});
+  return Object.assign({ type: 'stack', direction: 'column', alignItems: 'start', gap: 6, padding: 12, borderRadius: 22, backgroundColor: GLASS, borderWidth: 1, borderColor: GLASS_BORDER, children }, extra || {});
 }
 
 /* ---------- 尺寸 ---------- */
@@ -1376,7 +1376,7 @@ function buildLarge(title, ds, fromCache, ctx) {
   };
 }
 
-  return { buildMedium, buildLarge, glassBackground: GLASS, colors: { fee: C_FEE, flow: C_FLOW, voice: C_VOICE } };
+  return { buildMedium, buildLarge, glassBackground: GLASS, glassBorder: GLASS_BORDER, colors: { fee: C_FEE, flow: C_FLOW, voice: C_VOICE } };
 })();
 
 function buildMedium(title, ds, fromCache, ctx) {

@@ -104,9 +104,9 @@ YYB 的 wxapp 调用会消耗额度，上游失败也计次。YYB 密钥或授�
 本地检查：`node --test test/electricity-widget.test.cjs`。
 
 ---
-## 中国移动四卡圆环
+## 中国移动信息组件
 
-基于 Hark 的中国移动查询脚本。小号保留居中的三张横向信息卡，采用 Hark iOS 的橙色话费、蓝色流量和绿色语音配色，以及与中大号一致的透明玻璃背景和半透明卡片；中号与大号直接移植 [Hark iOS 版](https://github.com/zhaohantao1360-hash/Hark/blob/main/china-mobile-hark-ios.js)的三层圆环和玻璃卡片布局。支持桌面和锁屏尺寸。
+中国移动话费、流量与语音小组件。小号三张信息卡，中号/大号三层圆环；卡片只保留描边、不填充白色，整块直接使用系统透明玻璃材质。支持桌面和锁屏尺寸。
 
 ### 安装
 
@@ -116,9 +116,9 @@ YYB 的 wxapp 调用会消耗额度，上游失败也计次。YYB 密钥或授�
 https://raw.githubusercontent.com/Tiomehsh/egern/main/widget/china-mobile-bytevalley-egern.yaml
 ```
 
-在模块 Env 填写 `CM_PHONENUMBER`（11 位移动手机号）。安装并信任 Egern 的 MITM 证书后，打开「中国移动」App，用短信验证码登录一次以捕获登录参数。随后在 Egern 小组件图库选择 `china-mobile-bytevalley-egern`。如果启用了原 Hark 仪表盘模块，先关闭原模块，避免重复处理登录请求。
+在模块 Env 填写 `CM_PHONENUMBER`（11 位移动手机号）。安装并信任 Egern 的 MITM 证书后，打开「中国移动」App，用短信验证码登录一次以捕获登录参数。随后在 Egern 小组件图库选择 `中国移动信息组件`。如果启用了原 Hark 仪表盘模块，先关闭原模块，避免重复处理登录请求。
 
-数据查询与保活逻辑来自 [zhaohantao1360-hash/Hark](https://github.com/zhaohantao1360-hash/Hark)，视觉参考 [ByteValley/NetTool](https://github.com/ByteValley/NetTool)。
+数据查询与保活逻辑来自 [zhaohantao1360-hash/Hark](https://github.com/zhaohantao1360-hash/Hark)。
 
 ---
 
