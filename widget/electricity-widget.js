@@ -482,7 +482,7 @@ function formatTime(timestamp, compact = false) {
 
 function headerRow(meter, stale, timeSize = 9) {
   return {
-    type: 'stack', direction: 'row', alignItems: 'center',
+    type: 'stack', direction: 'row', alignItems: 'center', height: timeSize + 4,
     children: [
       { type: 'spacer' },
       text(formatTime(meter.dataAt), timeSize, stale ? C.warn : C.dim, 'medium', { minScale: 0.7 })
@@ -645,13 +645,14 @@ function smallHomeWidget(data, ctx) {
   const meter = data.meter;
   const color = statusColor(data);
   return {
-    type: 'widget', ...rootBackground(ctx), padding: [16, 17], gap: 7,
+    type: 'widget', ...rootBackground(ctx), padding: [16, 17], gap: 0,
     refreshAfter: refreshAfter(ctx),
     children: [
       headerRow(meter, meter.stale, 9),
       { type: 'spacer' },
       centeredBalanceBlock(meter, color, 31),
-      { type: 'spacer' }
+      { type: 'spacer' },
+      { type: 'spacer', length: 13 }
     ]
   };
 }
@@ -660,7 +661,7 @@ function mediumHomeWidget(data, ctx) {
   const meter = data.meter;
   const color = statusColor(data);
   return {
-    type: 'widget', ...rootBackground(ctx), padding: [17, 19], gap: 8,
+    type: 'widget', ...rootBackground(ctx), padding: [17, 19], gap: 0,
     refreshAfter: refreshAfter(ctx),
     children: [
       headerRow(meter, meter.stale, 9),
@@ -678,7 +679,8 @@ function mediumHomeWidget(data, ctx) {
           { type: 'stack', width: 1, backgroundColor: C.line, borderRadius: 1 },
           mediumUsageChart(data)
         ]
-      }
+      },
+      { type: 'spacer', length: 13 }
     ]
   };
 }
@@ -687,17 +689,19 @@ function largeHomeWidget(data, ctx, extraLarge = false) {
   const meter = data.meter;
   const color = statusColor(data);
   return {
-    type: 'widget', ...rootBackground(ctx), padding: extraLarge ? [23, 28] : [22, 24], gap: 7,
+    type: 'widget', ...rootBackground(ctx), padding: extraLarge ? [23, 28] : [22, 24], gap: 0,
     refreshAfter: refreshAfter(ctx),
     children: [
       headerRow(meter, meter.stale, 10),
-      { type: 'spacer', length: 6 },
+      { type: 'spacer' },
       centeredBalanceBlock(meter, color, extraLarge ? 51 : 43, extraLarge ? 13 : 12),
-      { type: 'spacer', length: 12 },
+      { type: 'spacer' },
+      { type: 'spacer', length: 8 },
       { type: 'stack', height: 1, backgroundColor: C.line },
       { type: 'spacer', length: 8 },
       text('近 7 日用电 / 度', 11, C.dim, 'bold'),
-      sevenDayUsageChart(data, extraLarge)
+      sevenDayUsageChart(data, extraLarge),
+      { type: 'spacer', length: 14 }
     ]
   };
 }
