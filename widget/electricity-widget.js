@@ -631,6 +631,18 @@ function sevenDayUsageChart(data, extraLarge = false) {
   };
 }
 
+function centeredBalanceValue(meter, color, size) {
+  return {
+    type: 'stack', direction: 'row', alignItems: 'end', gap: 4,
+    children: [
+      text(formatFixed(meter.remaining), size, color, 'bold', {
+        font: { size, weight: 'bold', family: 'Menlo' }, minScale: 0.5
+      }),
+      text('度', size >= 40 ? 13 : 11, C.dim, 'semibold')
+    ]
+  };
+}
+
 function smallHomeWidget(data, ctx) {
   const meter = data.meter;
   const color = statusColor(data);
@@ -638,9 +650,21 @@ function smallHomeWidget(data, ctx) {
     type: 'widget', ...rootBackground(ctx), padding: [16, 17], gap: 7,
     refreshAfter: refreshAfter(ctx),
     children: [
-      headerRow(meter, meter.stale, 11, 9),
       { type: 'spacer' },
-      balanceValue(meter, color, 31),
+      {
+        type: 'stack', direction: 'row', alignItems: 'center',
+        children: [
+          { type: 'spacer' },
+          {
+            type: 'stack', direction: 'column', alignItems: 'center', gap: 6,
+            children: [
+              text('电量还剩', 12, C.dim, 'medium', { textAlign: 'center' }),
+              centeredBalanceValue(meter, color, 31)
+            ]
+          },
+          { type: 'spacer' }
+        ]
+      },
       { type: 'spacer' }
     ]
   };
